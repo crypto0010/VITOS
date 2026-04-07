@@ -1,0 +1,2 @@
+# /etc/pam.d/vitos-banner
+session required pam_exec.so stdout /usr/lib/vitos/firstboot.sh consent

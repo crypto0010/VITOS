@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# /usr/local/bin/vitos-run — namespaced + Firejail wrapper for security tools
+set -euo pipefail
+
+TOOL_NAME="$(basename "$0")"
+if [ "$TOOL_NAME" = "vitos-run" ]; then
+  TOOL_NAME="${1:-}"
+  [ -z "${TOOL_NAME}" ] && { echo "usage: vitos-run <tool> [args...]" >&2; exit 2; }
+  shift
+fi
+
+REAL_BIN=""
+for cand in /usr/bin/"$TOOL_NAME" /usr/sbin/"$TOOL_NAME" /opt/"$TOOL_NAME"/"$TOOL_NAME"; do
+  [ -x "$cand" ] && { REAL_BIN="$cand"; break; }
+done
+if [ -z "$REAL_BIN" ] && [ "${VITOS_DRYRUN:-0}" != "1" ]; then
+  echo "vitos-run: tool '$TOOL_NAME' not installed" >&2
+  exit 127
+fi
+
+USER_NAME="$(id -un)"
+STUDENT_ID="${STUDENT_ID:-$USER_NAME}"
+SESSION_ID="${VITOS_SESSION_ID:-$(date +%s)-$$}"
+
+ARGV_JSON=$(printf '%s\n' "$TOOL_NAME" "$@" | jq -Rs 'split("\n")[:-1]')
+EVENT=$(jq -nc \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg type "tool_exec" \
+  --arg sid "$STUDENT_ID" \
+  --arg sess "$SESSION_ID" \
+  --arg tool "$TOOL_NAME" \
+  --argjson argv "$ARGV_JSON" \
+  '{ts:$ts,type:$type,student_id:$sid,session_id:$sess,tool:$tool,argv:$argv}')
+
+if [ "${VITOS_DRYRUN:-0}" = "1" ]; then
+  echo "$EVENT"
+  exit 0
+fi
+
+if [ -S /run/vitos/bus.sock ]; then
+  printf '%s\n' "$EVENT" | socat - UNIX-CONNECT:/run/vitos/bus.sock 2>/dev/null || true
+fi
+
+# Admins bypass sandbox
+if id -nG "$USER_NAME" | grep -qw vitos-admins; then
+  exec "$REAL_BIN" "$@"
+fi
+
+if ! id -nG "$USER_NAME" | grep -qw vitos-students; then
+  echo "vitos-run: caller must be a vitos-student or vitos-admin" >&2
+  exit 13
+fi
+
+PROFILE="/etc/firejail/vitos-${TOOL_NAME}.profile"
+[ -f "$PROFILE" ] || PROFILE="/etc/firejail/vitos-default.profile"
+exec firejail --quiet --profile="$PROFILE" \
+  --env=STUDENT_ID="$STUDENT_ID" \
+  --env=VITOS_SESSION_ID="$SESSION_ID" \
+  -- "$REAL_BIN" "$@"

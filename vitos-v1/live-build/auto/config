@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+lb config noauto \
+  --architectures amd64 \
+  --distribution bookworm \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --binary-images iso-hybrid \
+  --bootloaders "syslinux,grub-efi" \
+  --linux-flavours "vitos" \
+  --linux-packages linux-image \
+  --debian-installer false \
+  --memtest none \
+  --iso-application "VITOS" \
+  --iso-volume "VITOS-V1" \
+  --iso-publisher "VIT" \
+  --bootappend-live "boot=live components quiet splash plymouth.enable=1 username=student" \
+  "${@}"

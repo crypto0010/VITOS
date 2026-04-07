@@ -1,0 +1,20 @@
+[Unit]
+Description=VITOS event bus
+After=local-fs.target
+Before=vitos-ai.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /run/vitos /var/log/vitos
+ExecStartPre=/bin/chown vitos-mon:vitos-mon /run/vitos /var/log/vitos
+User=vitos-mon
+Group=vitos-mon
+ExecStart=/usr/sbin/vitos-busd
+Restart=on-failure
+RestartSec=2
+ProtectSystem=strict
+ReadWritePaths=/run/vitos /var/log/vitos
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

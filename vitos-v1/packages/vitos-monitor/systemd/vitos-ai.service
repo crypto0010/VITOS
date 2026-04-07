@@ -1,0 +1,19 @@
+[Unit]
+Description=VITOS AI behavioral engine
+After=vitos-busd.service ollama.service
+Wants=ollama.service
+Requires=vitos-busd.service
+
+[Service]
+Type=simple
+User=vitos-mon
+Group=vitos-mon
+ExecStart=/usr/bin/vitos-ai --bus=/run/vitos/bus.sock.sub --alerts=/var/log/vitos/alerts.jsonl
+Restart=on-failure
+RestartSec=3
+ProtectSystem=strict
+ReadWritePaths=/var/log/vitos /var/lib/vitos
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

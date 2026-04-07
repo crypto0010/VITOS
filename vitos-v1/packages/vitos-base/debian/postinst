@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    chmod 0440 /etc/sudoers.d/vitos
+    visudo -c -f /etc/sudoers.d/vitos
+    chmod 0755 /usr/lib/vitos/firstboot.sh
+    systemctl enable vitos-firstboot.service || true
+
+    # PAM consent hook
+    if ! grep -q 'vitos-banner' /etc/pam.d/common-session; then
+      echo 'session optional pam_exec.so stdout /usr/lib/vitos/firstboot.sh consent' \
+        >> /etc/pam.d/common-session
+    fi
+
+    # pam_faillock — lock account after 5 failed logins for 15 min
+    if ! grep -q 'pam_faillock' /etc/pam.d/common-auth; then
+      sed -i '1i auth required pam_faillock.so deny=5 unlock_time=900' \
+        /etc/pam.d/common-auth
+    fi
+
+    # Plymouth theme
+    if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+      plymouth-set-default-theme -R vitos || true
+    fi
+
+    # LightDM greeter background
+    install -d /etc/lightdm/lightdm-gtk-greeter.conf.d
+    cat > /etc/lightdm/lightdm-gtk-greeter.conf.d/90-vitos.conf <<'EOF'
+[greeter]
+background = /usr/share/vitos/branding/lightdm-background.png
+theme-name = Adwaita-dark
+font-name = DejaVu Sans 11
+indicators = ~host;~spacer;~clock;~spacer;~session;~power
+EOF
+    ;;
+esac
+#DEBHELPER#
+exit 0

@@ -1,0 +1,17 @@
+build/vitos-busd                                           usr/sbin
+build/vitos-bpf-exec                                       usr/sbin
+build/vitos-bpf-net                                        usr/sbin
+collectors/shell-tap.sh                                    etc/profile.d
+collectors/udev-tap.py                                     usr/lib/vitos/collectors
+collectors/fanotify-tap.py                                 usr/lib/vitos/collectors
+ai/                                                        usr/lib/vitos/ai
+cli/                                                       usr/lib/vitos/cli
+systemd/vitos-busd.service                                 lib/systemd/system
+systemd/vitos-bpf-exec.service                             lib/systemd/system
+systemd/vitos-bpf-net.service                              lib/systemd/system
+systemd/vitos-shell-tap.service                            lib/systemd/system
+systemd/vitos-udev-tap.service                             lib/systemd/system
+systemd/vitos-fanotify-tap.service                         lib/systemd/system
+systemd/vitos-ai.service                                   lib/systemd/system
+systemd/ollama.service                                     lib/systemd/system
+../../ollama-blob/Modelfile                                etc/vitos

@@ -1,0 +1,27 @@
+# Build outputs
+vitos-v1/work/
+vitos-v1/live-build/config/packages.chroot/*.deb
+vitos-v1/live-build/config/includes.chroot/var/lib/ollama/models/blobs/*.gguf
+vitos-v1/packages/*/build/
+vitos-v1/packages/*/debian/.debhelper/
+vitos-v1/packages/*/debian/files
+vitos-v1/packages/*/debian/*.substvars
+vitos-v1/packages/*/debian/*.log
+vitos-v1/packages/*/debian/vitos-*/
+vitos-v1/*.iso
+vitos-v1/*.iso.zsync
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Go
+vitos-v1/packages/vitos-monitor/busd/go.sum
+vitos-v1/packages/vitos-monitor/bpf/go.sum
+
+# OS
+.DS_Store
+Thumbs.db

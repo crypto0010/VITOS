@@ -1,0 +1,14 @@
+[Unit]
+Description=VITOS first-boot initialization
+After=local-fs.target
+ConditionPathExists=!/var/lib/vitos/.firstboot-done
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/vitos/firstboot.sh init
+ExecStartPost=/bin/touch /var/lib/vitos/.firstboot-done
+ExecStartPost=/bin/sh -c 'grep -q vitos.selftest=1 /proc/cmdline && /usr/lib/vitos/firstboot.sh selftest > /dev/ttyS0 || true'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

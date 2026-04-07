@@ -1,0 +1,18 @@
+Source: vitos-base
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-base
+Architecture: all
+Depends: ${misc:Depends},
+ systemd, libpam-modules, libpam-runtime, auditd, sqlite3, sudo,
+ task-xfce-desktop, lightdm, lightdm-gtk-greeter,
+ plymouth, plymouth-themes, plymouth-x11
+Description: VITOS base layer (users, PAM, consent banner, auditd skeleton)
+ Provides the vitos-students and vitos-admins groups, default accounts,
+ sudoers policy, login consent banner, Plymouth boot theme, LightDM
+ branding, and the minimal auditd ruleset that the vitos-monitor package
+ extends.

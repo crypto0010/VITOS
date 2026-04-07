@@ -1,0 +1,13 @@
+[Unit]
+Description=VITOS fanotify file-access collector
+After=vitos-busd.service local-fs.target
+Requires=vitos-busd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/lib/vitos/collectors/fanotify-tap.py
+Restart=on-failure
+AmbientCapabilities=CAP_SYS_ADMIN
+
+[Install]
+WantedBy=multi-user.target

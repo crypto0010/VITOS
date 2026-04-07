@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+# Install Ollama binary into the chroot
+curl -fsSL https://ollama.com/install.sh | sed 's/systemctl start/true #/' | sh
+
+getent group ollama  >/dev/null || groupadd --system ollama
+getent passwd ollama >/dev/null || \
+  useradd --system --gid ollama --home /var/lib/ollama --shell /usr/sbin/nologin ollama
+mkdir -p /var/lib/ollama/models
+chown -R ollama:ollama /var/lib/ollama
+
+# Pre-baked model blob staged via includes.chroot/var/lib/ollama/models/blobs/
+
+systemctl enable vitos-firstboot.service \
+                 vitos-busd.service \
+                 vitos-bpf-exec.service \
+                 vitos-bpf-net.service \
+                 vitos-shell-tap.service \
+                 vitos-udev-tap.service \
+                 vitos-fanotify-tap.service \
+                 ollama.service \
+                 vitos-ai.service \
+                 lightdm.service || true
+
+passwd -l root || true

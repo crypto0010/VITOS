@@ -1,0 +1,13 @@
+# /etc/audit/rules.d/00-vitos-base.rules
+-D
+-b 8192
+-f 1
+
+-w /etc/passwd        -p wa -k vitos-identity
+-w /etc/shadow        -p wa -k vitos-identity
+-w /etc/sudoers       -p wa -k vitos-identity
+-w /etc/sudoers.d/    -p wa -k vitos-identity
+-w /var/lib/vitos/consent.db -p rwxa -k vitos-consent
+
+-a always,exit -F arch=b64 -S execve -F auid>=1000 -F auid!=unset -k vitos-exec
+-a always,exit -F arch=b32 -S execve -F auid>=1000 -F auid!=unset -k vitos-exec

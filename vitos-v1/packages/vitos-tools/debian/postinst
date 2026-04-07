@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+TOOLS="nmap ncat wireshark tcpdump aircrack-ng ettercap bettercap scapy \
+ msfconsole sqlmap hydra john hashcat burpsuite \
+ binwalk exiftool fls volatility3 yara r2 ghidra strace ltrace autopsy"
+case "$1" in
+  configure)
+    for t in $TOOLS; do
+      if [ ! -e "/usr/local/bin/$t" ]; then
+        ln -sf /usr/local/bin/vitos-run "/usr/local/bin/$t"
+      fi
+    done
+    ;;
+esac
+#DEBHELPER#
+exit 0

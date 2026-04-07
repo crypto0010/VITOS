@@ -1,0 +1,17 @@
+Source: vitos-monitor
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-monitor
+Architecture: amd64
+Depends: ${misc:Depends}, vitos-base, vitos-tools,
+ python3 (>= 3.11), python3-venv, python3-sklearn, python3-numpy,
+ python3-yaml, python3-click, python3-httpx,
+ auditd, libcap2-bin
+Description: VITOS telemetry collectors, AI behavioral engine, vitosctl
+ Bundles vitos-busd (event bus), eBPF exec/net collectors, userspace shell/
+ udev/fanotify taps, the Python AI engine using Ollama for command-intent
+ classification, and the vitosctl admin CLI.

@@ -1,0 +1,4 @@
+# /etc/sudoers.d/vitos — installed mode 0440
+%vitos-admins   ALL=(ALL:ALL) ALL
+# vitos-students get NO sudo entry. The time-limited token mechanism is SP6.
+Defaults:%vitos-students !authenticate, !targetpw

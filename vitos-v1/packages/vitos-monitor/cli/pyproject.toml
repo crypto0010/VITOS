@@ -1,0 +1,12 @@
+[project]
+name = "vitosctl"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["click>=8.1", "rich>=13"]
+
+[project.scripts]
+vitosctl = "vitosctl.main:cli"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

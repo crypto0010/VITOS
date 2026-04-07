@@ -1,0 +1,47 @@
+# Local meta-packages (provided via packages.chroot/)
+vitos-base
+vitos-tools
+vitos-monitor
+
+# Desktop
+task-xfce-desktop
+lightdm
+lightdm-gtk-greeter
+
+# Dependencies (most pulled transitively, listed for clarity)
+firejail
+auditd
+sqlite3
+nmap
+wireshark
+tcpdump
+aircrack-ng
+ettercap-text-only
+bettercap
+python3-scapy
+sqlmap
+hydra
+john
+hashcat
+binwalk
+exiftool
+sleuthkit
+yara
+radare2
+strace
+ltrace
+dnscrypt-proxy
+socat
+jq
+python3-httpx
+python3-yaml
+python3-click
+python3-sklearn
+python3-numpy
+
+# Pulled from Kali (priority 50 — installs only because explicitly named)
+metasploit-framework
+burpsuite
+ghidra
+volatility3
+autopsy

@@ -1,0 +1,11 @@
+# /etc/vitos/lab-scopes/example.yaml
+exercise: "Recon-101"
+allowed_targets:
+  - 10.10.1.0/24
+  - 10.10.2.0/24
+allowed_ports: [22, 80, 443, 8080]
+allowed_tools: [nmap, ncat, tcpdump, wireshark]
+forbidden_actions:
+  - arp_spoof
+  - dns_poison
+  - exfil_external

@@ -1,0 +1,14 @@
+[Unit]
+Description=VITOS eBPF network flow collector
+After=vitos-busd.service network.target
+Requires=vitos-busd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/vitos-bpf-net --mode=net --bus=/run/vitos/bus.sock
+Restart=on-failure
+AmbientCapabilities=CAP_BPF CAP_NET_ADMIN CAP_PERFMON CAP_SYS_RESOURCE
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+etc/sudoers.d/vitos                           etc/sudoers.d
+etc/audit/rules.d/00-vitos-base.rules         etc/audit/rules.d
+etc/pam.d/vitos-banner                        etc/pam.d
+usr/lib/vitos/login-banner                    usr/lib/vitos
+usr/lib/vitos/firstboot.sh                    usr/lib/vitos
+lib/systemd/system/vitos-firstboot.service    lib/systemd/system
+usr/share/vitos/branding/                     usr/share/vitos
+usr/share/plymouth/themes/vitos/              usr/share/plymouth/themes

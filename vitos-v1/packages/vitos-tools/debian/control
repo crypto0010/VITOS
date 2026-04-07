@@ -1,0 +1,19 @@
+Source: vitos-tools
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-tools
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, firejail, jq, socat,
+ nmap, ncat, wireshark, tcpdump, aircrack-ng, ettercap-text-only,
+ bettercap, python3-scapy,
+ metasploit-framework, sqlmap, hydra, john, hashcat, burpsuite,
+ binwalk, exiftool, sleuthkit, volatility3, yara, radare2, ghidra,
+ strace, ltrace, autopsy
+Description: VITOS security toolchain wrapped in Firejail sandbox profiles
+ Installs every pentesting, network, forensics, and malware-analysis tool
+ referenced in the VITOS spec, each fronted by /usr/local/bin/<tool> which
+ invokes vitos-run for namespaced execution and telemetry capture.

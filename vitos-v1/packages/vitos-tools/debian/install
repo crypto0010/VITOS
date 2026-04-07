@@ -1,0 +1,6 @@
+usr/local/bin/vitos-run            usr/local/bin
+etc/firejail/vitos-default.profile etc/firejail
+etc/firejail/vitos-nmap.profile    etc/firejail
+etc/firejail/vitos-wireshark.profile etc/firejail
+etc/firejail/vitos-msfconsole.profile etc/firejail
+etc/vitos/lab-scopes/example.yaml  etc/vitos/lab-scopes

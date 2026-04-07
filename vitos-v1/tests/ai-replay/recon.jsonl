@@ -1,0 +1,3 @@
+{"ts":"2026-04-07T00:00:00Z","type":"tool_exec","student_id":"student","session_id":"smoke-1","tool":"nmap","argv":["nmap","-sS","8.8.8.8"]}
+{"ts":"2026-04-07T00:00:01Z","type":"net_flow","student_id":"student","session_id":"smoke-1","daddr":"8.8.8.8","dport":443,"bytes":4096}
+{"ts":"2026-04-07T00:00:02Z","type":"shell_cmd","student_id":"student","session_id":"smoke-1","cmd":"hydra -l root -P rockyou.txt ssh://192.168.1.10"}

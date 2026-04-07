@@ -1,0 +1,14 @@
+[Unit]
+Description=VITOS USB/udev event collector
+After=vitos-busd.service systemd-udevd.service
+Requires=vitos-busd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/lib/vitos/collectors/udev-tap.py
+Restart=on-failure
+User=vitos-mon
+Group=vitos-mon
+
+[Install]
+WantedBy=multi-user.target
