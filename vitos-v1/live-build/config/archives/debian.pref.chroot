@@ -1,7 +1,0 @@
-# Pin Debian high so that any package with both Debian and Kali versions
-# resolves to the Debian version. Kali-only packages and their dep chains
-# (e.g. metasploit-framework -> oracle-instantclient-basic -> libaio1t64+kali1)
-# can still be installed at Kali's default priority of 500.
-Package: *
-Pin: release o=Debian
-Pin-Priority: 990
