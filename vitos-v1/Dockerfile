@@ -7,6 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential bc bison flex libssl-dev libelf-dev \
     libncurses-dev rsync cpio kmod \
+    gcc-12 g++-12 \
     debhelper devscripts dpkg-dev fakeroot lintian \
     live-build live-boot live-config-doc \
     debootstrap squashfs-tools xorriso isolinux syslinux-common \
