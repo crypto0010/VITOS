@@ -3,6 +3,9 @@ vitos-base
 vitos-tools
 vitos-monitor
 
+# Required so the custom kernel's postinst generates initrd.img-*
+initramfs-tools
+
 # Desktop
 task-xfce-desktop
 lightdm

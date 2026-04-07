@@ -1,0 +1,11 @@
+#!/bin/sh
+# Safety net: regenerate initramfs for every installed kernel after package
+# install. The custom kernel .deb's postinst only runs update-initramfs if
+# initramfs-tools was already installed at unpack time, which depends on
+# package ordering inside the chroot. Forcing it here makes the binary
+# stage's "find binary/live/initrd.img-*" step succeed unconditionally.
+set -e
+if command -v update-initramfs >/dev/null 2>&1; then
+  update-initramfs -c -k all || update-initramfs -u -k all || true
+fi
+ls -lh /boot/initrd.img-* /boot/vmlinuz-* 2>/dev/null || true
