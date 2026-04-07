@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT="$(dirname "$0")/../usr/local/bin/vitos-run"
+SCRIPT="$(dirname "$0")/../usr/sbin/vitos-run"
 
 out=$(STUDENT_ID=test123 VITOS_DRYRUN=1 "$SCRIPT" nmap -V)
 echo "$out" | grep -q '"student_id":"test123"' || { echo "FAIL: missing student_id"; exit 1; }

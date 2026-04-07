@@ -7,7 +7,7 @@ case "$1" in
   configure)
     for t in $TOOLS; do
       if [ ! -e "/usr/local/bin/$t" ]; then
-        ln -sf /usr/local/bin/vitos-run "/usr/local/bin/$t"
+        ln -sf /usr/sbin/vitos-run "/usr/local/bin/$t"
       fi
     done
     ;;

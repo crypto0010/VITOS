@@ -1,4 +1,4 @@
-usr/local/bin/vitos-run            usr/local/bin
+usr/sbin/vitos-run                 usr/sbin
 etc/firejail/vitos-default.profile etc/firejail
 etc/firejail/vitos-nmap.profile    etc/firejail
 etc/firejail/vitos-wireshark.profile etc/firejail
