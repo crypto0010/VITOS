@@ -2,7 +2,7 @@
 set -e
 lb config noauto \
   --architectures amd64 \
-  --distribution bookworm \
+  --distribution trixie \
   --archive-areas "main contrib non-free non-free-firmware" \
   --binary-images iso-hybrid \
   --bootloaders "syslinux,grub-efi" \
