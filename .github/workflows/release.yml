@@ -78,6 +78,12 @@ jobs:
             '/build/vitos-v1/kernel/build-kernel.sh'
           ls -lh vitos-v1/live-build/config/packages.chroot/
 
+      # ---- branding (must precede vitos-base build) -----------------------
+      - name: Generate VIT Bhopal branding artifacts
+        run: |
+          docker run --rm -v "$PWD:/build" vitos-builder:latest -c \
+            '/build/vitos-v1/branding/build-branding.sh'
+
       # ---- packages -------------------------------------------------------
       - name: Build vitos-base / vitos-tools / vitos-monitor .debs
         run: |
@@ -96,13 +102,6 @@ jobs:
             "
           done
           ls -lh vitos-v1/live-build/config/packages.chroot/
-
-      # ---- branding -------------------------------------------------------
-      - name: Generate VIT Bhopal branding artifacts
-        run: |
-          docker run --rm -v "$PWD:/build" vitos-builder:latest -c \
-            'chmod +x /build/vitos-v1/branding/build-branding.sh && \
-             /build/vitos-v1/branding/build-branding.sh'
 
       # ---- ollama model ---------------------------------------------------
       - name: Cache Ollama model blob
