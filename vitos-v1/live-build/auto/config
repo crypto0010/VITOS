@@ -13,6 +13,9 @@ lb config noauto \
   --mirror-chroot http://http.kali.org/kali \
   --mirror-binary http://http.kali.org/kali \
   --keyring-packages kali-archive-keyring \
+  --security false \
+  --updates false \
+  --backports false \
   --binary-images iso-hybrid \
   --bootloaders "syslinux,grub-efi" \
   --linux-flavours "6.6.52-vitos" \
