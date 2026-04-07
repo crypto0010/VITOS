@@ -25,3 +25,6 @@ vitos-v1/packages/vitos-monitor/bpf/go.sum
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Claude settings (do not publish)
+.claude/

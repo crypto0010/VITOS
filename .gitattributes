@@ -1,0 +1,7 @@
+# Force LF for all Linux/build files
+* text=auto eol=lf
+
+# Binaries
+*.png binary
+*.gguf binary
+*.iso binary
