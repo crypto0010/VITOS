@@ -4,14 +4,32 @@ case "$1" in
   configure)
     getent group vitos-mon >/dev/null || groupadd --system vitos-mon
     getent passwd vitos-mon >/dev/null || \
-      useradd --system --gid vitos-mon --home /var/lib/vitos --shell /usr/sbin/nologin vitos-mon
+      useradd --system --gid vitos-mon --home /var/lib/vitos \
+              --shell /usr/sbin/nologin vitos-mon
     install -d -o vitos-mon -g vitos-mon -m 0750 /var/log/vitos /run/vitos /var/lib/vitos
 
-    python3 -m venv /opt/vitos-ai
-    /opt/vitos-ai/bin/pip install --quiet -e /usr/lib/vitos/ai
-    ln -sf /opt/vitos-ai/bin/vitos-ai /usr/bin/vitos-ai
-    /opt/vitos-ai/bin/pip install --quiet -e /usr/lib/vitos/cli
-    ln -sf /opt/vitos-ai/bin/vitosctl /usr/bin/vitosctl
+    # Deps (sklearn/numpy/httpx/yaml/click) come from apt via Depends,
+    # so no pip / venv needed. Make our modules importable by dropping
+    # symlinks into the system dist-packages dir, then ship wrapper
+    # scripts for the two CLI entry points.
+    PY3=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    DIST=/usr/lib/python3/dist-packages
+    [ -d "$DIST" ] || DIST=/usr/lib/python${PY3}/dist-packages
+    mkdir -p "$DIST"
+    ln -sfn /usr/lib/vitos/ai/vitos_ai   "$DIST/vitos_ai"
+    ln -sfn /usr/lib/vitos/cli/vitosctl  "$DIST/vitosctl"
+
+    cat > /usr/bin/vitos-ai <<'WRAP'
+#!/bin/sh
+exec python3 -m vitos_ai.service "$@"
+WRAP
+    chmod +x /usr/bin/vitos-ai
+
+    cat > /usr/bin/vitosctl <<'WRAP'
+#!/bin/sh
+exec python3 -m vitosctl.main "$@"
+WRAP
+    chmod +x /usr/bin/vitosctl
 
     if command -v ollama >/dev/null 2>&1 && [ -f /etc/vitos/Modelfile ]; then
       ollama create vitos-intent -f /etc/vitos/Modelfile || true
