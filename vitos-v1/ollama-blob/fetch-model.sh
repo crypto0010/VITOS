@@ -3,7 +3,10 @@
 set -euo pipefail
 DEST="${DEST:-/build/vitos-v1/live-build/config/includes.chroot/var/lib/ollama/models/blobs}"
 mkdir -p "$DEST"
-URL="https://huggingface.co/google/gemma-3-4b-it-qat-q4_0-gguf/resolve/main/gemma-3-4b-it-q4_0.gguf"
+# Use the non-gated community mirror — google/gemma-3-* requires license
+# acceptance and returns 401 to anonymous curl. bartowski's repo is the
+# same Q4_K_M quantization of the same instruction-tuned weights.
+URL="https://huggingface.co/bartowski/google_gemma-3-4b-it-GGUF/resolve/main/google_gemma-3-4b-it-Q4_K_M.gguf"
 SUM_FILE="$(dirname "$0")/SHA256SUMS"
 TARGET="$DEST/gemma3-4b-instruct-q4_K_M.gguf"
 
