@@ -6,7 +6,7 @@ lb config noauto \
   --archive-areas "main contrib non-free non-free-firmware" \
   --binary-images iso-hybrid \
   --bootloaders "syslinux,grub-efi" \
-  --linux-flavours "vitos" \
+  --linux-flavours "6.6.52-vitos" \
   --linux-packages linux-image \
   --debian-installer false \
   --memtest none \
