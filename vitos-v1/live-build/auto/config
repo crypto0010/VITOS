@@ -1,9 +1,18 @@
 #!/bin/sh
 set -e
 lb config noauto \
+  --mode kali \
   --architectures amd64 \
-  --distribution trixie \
+  --distribution kali-rolling \
+  --parent-distribution kali-rolling \
   --archive-areas "main contrib non-free non-free-firmware" \
+  --parent-mirror-bootstrap http://http.kali.org/kali \
+  --parent-mirror-chroot http://http.kali.org/kali \
+  --parent-mirror-binary http://http.kali.org/kali \
+  --mirror-bootstrap http://http.kali.org/kali \
+  --mirror-chroot http://http.kali.org/kali \
+  --mirror-binary http://http.kali.org/kali \
+  --keyring-packages kali-archive-keyring \
   --binary-images iso-hybrid \
   --bootloaders "syslinux,grub-efi" \
   --linux-flavours "6.6.52-vitos" \

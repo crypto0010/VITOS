@@ -84,15 +84,10 @@ jobs:
           docker run --rm -v "$PWD:/build" vitos-builder:latest -c \
             '/build/vitos-v1/branding/build-branding.sh'
 
-      # ---- Kali archive signing key ---------------------------------------
-      - name: Stage Kali archive GPG key for live-build
-        run: |
-          mkdir -p vitos-v1/live-build/config/archives
-          curl -fsSL https://archive.kali.org/archive-key.asc \
-            -o vitos-v1/live-build/config/archives/kali.key.chroot
-          ls -lh vitos-v1/live-build/config/archives/
-
       # ---- packages -------------------------------------------------------
+      # (Kali archive key no longer needed — base is now Kali rolling and
+      #  the kali-archive-keyring package is bootstrapped automatically.)
+
       - name: Build vitos-base / vitos-tools / vitos-monitor .debs
         run: |
           for pkg in vitos-base vitos-tools vitos-monitor; do

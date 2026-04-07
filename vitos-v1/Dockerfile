@@ -1,12 +1,14 @@
-FROM debian:trixie-slim
+FROM kalilinux/kali-rolling
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Builder image is Kali so live-build defaults to kali mode and the
+# kali-archive-keyring is already trusted — no manual key fetching.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential bc bison flex libssl-dev libelf-dev \
     libncurses-dev rsync cpio kmod \
     debhelper devscripts dpkg-dev fakeroot lintian \
-    live-build live-boot live-config \
+    live-build live-boot live-config-doc \
     debootstrap squashfs-tools xorriso isolinux syslinux-common \
     grub-pc-bin grub-efi-amd64-bin mtools dosfstools \
     git curl ca-certificates jq xz-utils \
@@ -15,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qemu-system-x86 qemu-utils ovmf \
     imagemagick fonts-dejavu-core \
     golang \
+    kali-archive-keyring \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 ENTRYPOINT ["/bin/bash"]
