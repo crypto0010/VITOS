@@ -39,9 +39,10 @@ python3-click
 python3-sklearn
 python3-numpy
 
-# Pulled from Kali (priority 50 — installs only because explicitly named)
+# Pulled from Kali (priority 100 — NotAutomatic but explicitly installable)
 metasploit-framework
 burpsuite
 ghidra
-volatility3
 autopsy
+# volatility3 is not packaged for Debian or Kali — install via pip in a
+# follow-up post-install hook (deferred). See docs/superpowers/specs/.
