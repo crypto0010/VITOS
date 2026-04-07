@@ -125,7 +125,39 @@ jobs:
             'chmod +x /build/vitos-v1/live-build/auto/config /build/vitos-v1/live-build/build-iso.sh && \
              /build/vitos-v1/live-build/build-iso.sh'
           ls -lh vitos-v1/vitos-v1-*.iso
-          sha256sum vitos-v1/vitos-v1-*.iso > vitos-v1/SHA256SUMS
+
+      # Split for GitHub Release (2 GB per-asset cap)
+      - name: Split ISO into 1.9 GB parts
+        run: |
+          cd vitos-v1
+          ISO=$(ls vitos-v1-*-amd64.iso | head -1)
+          BASE="${ISO%.iso}"
+          split -b 1900M -d -a 2 --additional-suffix=.iso "$ISO" "${BASE}.part"
+          ls -lh "${BASE}".part*.iso
+          sha256sum "$ISO" "${BASE}".part*.iso > SHA256SUMS
+          cat SHA256SUMS
+          cat > REASSEMBLE.md <<EOF
+          # Reassembling the VITOS ISO
+
+          The full VITOS ISO is ~8.5 GB. GitHub Release assets cap at 2 GB
+          per file, so the ISO is split into ~1.9 GB parts named
+          \`${BASE}.part00.iso\`, \`${BASE}.part01.iso\`, etc.
+
+          ## Download
+
+          Grab every \`${BASE}.part*.iso\` file plus \`SHA256SUMS\` from
+          this release.
+
+          ## Reassemble + verify
+
+          \`\`\`bash
+          cat ${BASE}.part*.iso > ${BASE}.iso
+          sha256sum -c SHA256SUMS
+          \`\`\`
+
+          The first checksum line in \`SHA256SUMS\` is the full ISO; the
+          rest are the parts.
+          EOF
 
       # ---- smoke test -----------------------------------------------------
       - name: Run QEMU smoke test (TCG soft-emulation)
@@ -155,6 +187,7 @@ jobs:
           name: VITOS ${{ steps.tag.outputs.tag }}
           generate_release_notes: true
           files: |
-            vitos-v1/vitos-v1-*.iso
+            vitos-v1/vitos-v1-*.part*.iso
             vitos-v1/SHA256SUMS
+            vitos-v1/REASSEMBLE.md
           fail_on_unmatched_files: false
