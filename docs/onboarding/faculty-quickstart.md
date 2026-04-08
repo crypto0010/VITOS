@@ -4,9 +4,11 @@ A 1-page guide for VIT Bhopal cybersecurity faculty managing the lab.
 
 > **VITOS** is designed and developed at the **Cybersecurity and Digital
 > Forensics Lab, VIT Bhopal University**, led by **Dr. Hemraj Shobharam
-> Lamkuche** (Project Director, Senior Assistant Professor 100541) and
-> **Pon Harshavardhanan** (Chief Mentor). Full team credits in
-> [`AUTHORS.md`](../../AUTHORS.md). Contact: **vitbhopal.os@gmail.com**.
+> Lamkuche** (Project Director, Senior Assistant Professor 100541),
+> **Dr. Pon Harshavardhanan** (Chief Mentor), and **Dr. Saravanan D.**
+> (Division Head — Cybersecurity and Digital Forensics).
+> Full team credits in [`AUTHORS.md`](../../AUTHORS.md).
+> Contact: **vitbhopal.os@gmail.com**.
 
 ## Sign in
 

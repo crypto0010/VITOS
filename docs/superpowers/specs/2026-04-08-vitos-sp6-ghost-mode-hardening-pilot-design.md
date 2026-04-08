@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-08
 **Status:** SHIPPED in v1.0.0
-**Developed by:** Cybersecurity and Digital Forensics Lab, VIT Bhopal University. Project Director: Dr. Hemraj Shobharam Lamkuche. Chief Mentor: Pon Harshavardhanan. Full team in [`AUTHORS.md`](../../../AUTHORS.md). Contact: `vitbhopal.os@gmail.com`.
+**Developed by:** Cybersecurity and Digital Forensics Lab, VIT Bhopal University. Project Director: Dr. Hemraj Shobharam Lamkuche. Chief Mentor: Dr. Pon Harshavardhanan. Division Head (Cybersecurity and Digital Forensics): Dr. Saravanan D. Full team in [`AUTHORS.md`](../../../AUTHORS.md). Contact: `vitbhopal.os@gmail.com`.
 **Sub-project:** SP6 of 6 (final sub-project — closes out the VITOS roadmap)
 **Parent specs:**
   - `2026-04-07-vitos-sp1-base-iso-design.md` (VITOS v1, shipped)

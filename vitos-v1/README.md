@@ -9,7 +9,8 @@ WireGuard/Tor Ghost Mode with dual-admin gating, and FreeIPA SSO.
 Bhopal University.** See [`../AUTHORS.md`](../AUTHORS.md) for the full team.
 
 - Project Director: **Dr. Hemraj Shobharam Lamkuche** — `vitbhopal.os@gmail.com`
-- Chief Mentor: **Pon Harshavardhanan**
+- Chief Mentor: **Dr. Pon Harshavardhanan**
+- Division Head, Cybersecurity and Digital Forensics: **Dr. Saravanan D.**
 
 Specs: [`../docs/superpowers/specs/`](../docs/superpowers/specs/)
 Plans: [`../docs/superpowers/plans/`](../docs/superpowers/plans/)

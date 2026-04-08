@@ -18,7 +18,8 @@ VIT Bhopal University · Bhopal, Madhya Pradesh, India
 | Role | Name |
 |---|---|
 | Project Director | **Dr. Hemraj Shobharam Lamkuche** — Senior Assistant Professor (Employee ID 100541) |
-| Chief Mentor | **Pon Harshavardhanan** |
+| Chief Mentor | **Dr. Pon Harshavardhanan** |
+| Division Head — Cybersecurity and Digital Forensics | **Dr. Saravanan D.** |
 
 With contributions from **17 team members** listed in [`AUTHORS.md`](AUTHORS.md).
 
@@ -71,9 +72,10 @@ session past `Warning`. All alerts are advisory — no automated punishment.
 
 ## 📖 Citation
 
-> Lamkuche, H. S., Harshavardhanan, P., et al. *VITOS — VIT Cybersecurity Lab
-> Operating System*. Cybersecurity and Digital Forensics Lab, VIT Bhopal
-> University, 2026. https://github.com/crypto0010/VITOS
+> Lamkuche, H. S., Harshavardhanan, P., Saravanan, D., et al.
+> *VITOS — VIT Cybersecurity Lab Operating System*.
+> Cybersecurity and Digital Forensics Lab, VIT Bhopal University, 2026.
+> https://github.com/crypto0010/VITOS
 
 ## License
 

@@ -31,7 +31,8 @@ export default function App() {
         <p style={{ margin: "0.15rem 0 0", fontSize: "0.72rem", opacity: 0.55 }}>
           Cybersecurity and Digital Forensics Lab · VIT Bhopal University ·
           Dr. Hemraj Shobharam Lamkuche (Project Director) ·
-          Pon Harshavardhanan (Chief Mentor)
+          Dr. Pon Harshavardhanan (Chief Mentor) ·
+          Dr. Saravanan D. (Division Head)
         </p>
         <nav style={{ marginTop: "0.5rem" }}>
           <NavLink to="/"        style={navStyle} end>Console</NavLink>

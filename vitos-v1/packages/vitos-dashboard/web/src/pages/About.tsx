@@ -13,7 +13,8 @@ export default function About() {
       <h3 style={{ color: "#facc15" }}>Project leadership</h3>
       <ul>
         <li><strong>Project Director:</strong> Dr. Hemraj Shobharam Lamkuche &mdash; Senior Assistant Professor (Employee ID 100541)</li>
-        <li><strong>Chief Mentor:</strong> Pon Harshavardhanan</li>
+        <li><strong>Chief Mentor:</strong> Dr. Pon Harshavardhanan</li>
+        <li><strong>Division Head, Cybersecurity and Digital Forensics:</strong> Dr. Saravanan D.</li>
       </ul>
 
       <h3 style={{ color: "#facc15" }}>Contributing team</h3>
@@ -52,7 +53,7 @@ export default function About() {
         whiteSpace: "pre-wrap",
         fontSize: "0.85rem",
       }}>
-{`Lamkuche, H. S., Harshavardhanan, P., et al.
+{`Lamkuche, H. S., Harshavardhanan, P., Saravanan, D., et al.
 VITOS — VIT Cybersecurity Lab Operating System.
 Cybersecurity and Digital Forensics Lab,
 VIT Bhopal University, 2026.

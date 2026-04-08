@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-07
 **Status:** SHIPPED 2026-04-08 (revision 3 — base swapped from Debian to Kali rolling after 14 CI runs of dependency hell)
-**Developed by:** Cybersecurity and Digital Forensics Lab, VIT Bhopal University. Project Director: Dr. Hemraj Shobharam Lamkuche. Chief Mentor: Pon Harshavardhanan. Full team in [`AUTHORS.md`](../../../AUTHORS.md). Contact: `vitbhopal.os@gmail.com`.
+**Developed by:** Cybersecurity and Digital Forensics Lab, VIT Bhopal University. Project Director: Dr. Hemraj Shobharam Lamkuche. Chief Mentor: Dr. Pon Harshavardhanan. Division Head (Cybersecurity and Digital Forensics): Dr. Saravanan D. Full team in [`AUTHORS.md`](../../../AUTHORS.md). Contact: `vitbhopal.os@gmail.com`.
 **Scope:** Collapses original SP1 (base) + SP2 (sandbox & tools) + SP3 (telemetry) + SP4 (AI engine) into a single shippable v1. SP5 (admin dashboard) and SP6 (ghost mode + pilot hardening) remain separate sub-projects.
 
 **Released ISO:** https://github.com/crypto0010/VITOS/releases/tag/v0.0.0-20260407-182918 (5 parts × ~1.9 GB, 8.5 GB total)
