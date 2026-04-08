@@ -1,0 +1,20 @@
+Source: vitos-sso
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-sso
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, vitos-monitor,
+ freeipa-client, sssd, sssd-ipa, libpam-sss, libnss-sss,
+ oddjob-mkhomedir
+Description: VITOS FreeIPA / LDAP single sign-on
+ Joins the lab workstation to a FreeIPA realm and chains pam_sss into
+ /etc/pam.d/common-auth so VIT credentials authenticate every shell, ssh,
+ sudo, and dashboard login. On first successful join the v1 hardcoded
+ 'admin' and 'student' accounts are deleted; their home directories are
+ archived under /var/lib/vitos/legacy-homes/ rather than destroyed.
+ Configuration is read from /etc/vitos/sso.toml; the package fail-soft
+ leaves the system fully usable in v1 mode if no sso.toml is staged.

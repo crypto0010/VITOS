@@ -4,6 +4,9 @@ vitos-tools
 vitos-monitor
 vitos-dashboard
 vitos-ghost
+vitos-sso
+vitos-hardening
+vitos-vit-bhopal
 
 # Required so the custom kernel's postinst generates initrd.img-*
 initramfs-tools

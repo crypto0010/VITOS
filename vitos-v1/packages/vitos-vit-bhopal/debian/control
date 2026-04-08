@@ -1,0 +1,17 @@
+Source: vitos-vit-bhopal
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-vit-bhopal
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, vitos-tools, vitos-monitor, cron
+Description: VIT Bhopal site overlay (lab scopes, hostname, retention)
+ Site-customization layer for the VIT Bhopal cybersecurity lab pilot.
+ Ships the 8 standard lab-exercise scope manifests for the semester
+ (recon-101 through capstone-801), the FERPA + India DPDP retention
+ cron, and the per-host naming template that derives a stable hostname
+ from the workstation MAC. Pulled in by the unattended installer profile
+ only — not part of the generic VITOS ISO.

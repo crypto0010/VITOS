@@ -1,0 +1,3 @@
+usr/lib/vitos/sso/join.sh           usr/lib/vitos/sso
+usr/lib/vitos/sso/purge-defaults.sh usr/lib/vitos/sso
+etc/vitos/sso.toml.example          etc/vitos

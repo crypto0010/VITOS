@@ -1,0 +1,6 @@
+# /etc/cron.d/vitos-retention — daily 03:30 retention sweep.
+# Honors /var/lib/vitos/retention.hold (if present, no-op).
+30 3 * * * root [ ! -f /var/lib/vitos/retention.hold ] && \
+  find /var/log/vitos/events.jsonl* -mtime +180 -delete 2>/dev/null; \
+  find /var/log/vitos/alerts.jsonl* -mtime +365 -delete 2>/dev/null; \
+  find /var/log/vitos/dashboard-audit.jsonl* -mtime +730 -delete 2>/dev/null

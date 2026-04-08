@@ -83,6 +83,23 @@ case "$ACTION" in
     # vitosctl ghost subcommand exists
     vitosctl ghost --help >/dev/null 2>&1 && say "ghost_cli=PASS" || say "ghost_cli=FAIL"
 
+    # SP6 Track 6B — FreeIPA SSO (fail-soft: package present, join optional)
+    [ -x /usr/lib/vitos/sso/join.sh ] && say "sso_join_script=PASS" || say "sso_join_script=FAIL"
+    [ -x /usr/lib/vitos/sso/purge-defaults.sh ] && say "sso_purge_script=PASS" || say "sso_purge_script=FAIL"
+    [ -f /etc/vitos/sso.toml.example ] && say "sso_example_config=PASS" || say "sso_example_config=FAIL"
+
+    # SP6 Track 6C — Hardening
+    [ -f /etc/lynis/profiles/vitos.prf ] && say "hardening_lynis_profile=PASS" || say "hardening_lynis_profile=FAIL"
+    [ -f /etc/cron.d/vitos-hardening ] && say "hardening_cron=PASS" || say "hardening_cron=FAIL"
+    [ -x /usr/lib/vitos/hardening/run-audit.sh ] && say "hardening_runner=PASS" || say "hardening_runner=FAIL"
+
+    # SP6 Track 6D — VIT pilot
+    [ -f /etc/cron.d/vitos-retention ] && say "pilot_retention_cron=PASS" || say "pilot_retention_cron=FAIL"
+    [ -f /etc/vitos/retention.toml ] && say "pilot_retention_config=PASS" || say "pilot_retention_config=FAIL"
+    nscopes=$(ls /etc/vitos/lab-scopes/*.yaml 2>/dev/null | wc -l)
+    [ "$nscopes" -ge 8 ] && say "pilot_lab_scopes=PASS" || say "pilot_lab_scopes=FAIL"
+    grep -q 'vitos-bhopal-lab3' /etc/hostname 2>/dev/null && say "pilot_hostname=PASS" || say "pilot_hostname=FAIL"
+
     # SP5 dashboard assertions
     DASH_BASE=http://127.0.0.1:8443
     curl -sf "$DASH_BASE/api/health" 2>/dev/null | grep -q '"ok":true' \

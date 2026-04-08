@@ -90,7 +90,7 @@ jobs:
 
       - name: Build vitos-* .debs
         run: |
-          for pkg in vitos-base vitos-tools vitos-monitor vitos-dashboard vitos-ghost; do
+          for pkg in vitos-base vitos-tools vitos-monitor vitos-dashboard vitos-ghost vitos-sso vitos-hardening vitos-vit-bhopal; do
             if [ "$pkg" = "vitos-monitor" ]; then
               mkdir -p vitos-v1/packages/vitos-monitor/build
               touch vitos-v1/packages/vitos-monitor/build/vitos-busd \

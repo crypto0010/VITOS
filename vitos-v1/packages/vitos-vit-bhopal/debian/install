@@ -1,0 +1,11 @@
+etc/vitos/lab-scopes/recon-101.yaml      etc/vitos/lab-scopes
+etc/vitos/lab-scopes/exploit-201.yaml    etc/vitos/lab-scopes
+etc/vitos/lab-scopes/forensics-301.yaml  etc/vitos/lab-scopes
+etc/vitos/lab-scopes/malware-401.yaml    etc/vitos/lab-scopes
+etc/vitos/lab-scopes/wireless-501.yaml   etc/vitos/lab-scopes
+etc/vitos/lab-scopes/web-601.yaml        etc/vitos/lab-scopes
+etc/vitos/lab-scopes/mobile-701.yaml     etc/vitos/lab-scopes
+etc/vitos/lab-scopes/capstone-801.yaml   etc/vitos/lab-scopes
+etc/cron.d/vitos-retention               etc/cron.d
+etc/vitos/retention.toml                 etc/vitos
+etc/hostname.template                    etc

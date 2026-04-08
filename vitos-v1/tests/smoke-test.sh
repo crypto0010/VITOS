@@ -57,7 +57,11 @@ for marker in uname bpf group_students group_admins student_no_sudo \
               dashboard_health dashboard_index dashboard_auth_required \
               dashboard_sse_gated \
               ghost_approver_group ghost_state_dirs ghost_scripts \
-              ghost_killswitch_ruleset ghost_off_by_default ghost_cli; do
+              ghost_killswitch_ruleset ghost_off_by_default ghost_cli \
+              sso_join_script sso_purge_script sso_example_config \
+              hardening_lynis_profile hardening_cron hardening_runner \
+              pilot_retention_cron pilot_retention_config pilot_lab_scopes \
+              pilot_hostname; do
   if grep -q "VITOS-SELFTEST: ${marker}=PASS" "$LOG"; then
     echo "  PASS: ${marker}"
   else

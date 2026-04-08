@@ -1,0 +1,9 @@
+exercise: "Web-601"
+description: "Web application security: OWASP Top 10 + intercepting proxy."
+allowed_targets:
+  - 10.10.30.0/24    # vulnerable web app range (Juice Shop, DVWA, etc.)
+allowed_ports: [80, 443, 3000, 8080, 8443]
+allowed_tools: [burpsuite, sqlmap, nmap, ncat, ffuf, nikto]
+forbidden_actions:
+  - exfil_external
+  - attack_outside_vlan30

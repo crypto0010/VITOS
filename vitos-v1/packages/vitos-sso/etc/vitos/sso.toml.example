@@ -1,0 +1,24 @@
+# /etc/vitos/sso.toml — VITOS FreeIPA SSO configuration
+#
+# Copy to /etc/vitos/sso.toml on a USB key during unattended install,
+# or place manually before running:  /usr/lib/vitos/sso/join.sh
+#
+# All fields are required unless marked optional.
+
+[ipa]
+realm   = "VITBHOPAL.LOCAL"     # placeholder until production realm decided
+domain  = "vitbhopal.local"
+server  = "ipa.vitbhopal.local" # IPA master FQDN
+admin   = "admin"               # IPA admin principal (username only)
+# password is read from /etc/vitos/sso.password (mode 0600)
+# Leave the actual password OUT of this TOML file.
+
+[contact]
+# Admin contact recorded in audit logs and the welcome email.
+email = "vitbhopal.os@gmail.com"
+
+[purge_defaults]
+# After a successful join, delete the v1-hardcoded admin/student
+# accounts. Their /home directories are archived to
+# /var/lib/vitos/legacy-homes/, never destroyed.
+enabled = true

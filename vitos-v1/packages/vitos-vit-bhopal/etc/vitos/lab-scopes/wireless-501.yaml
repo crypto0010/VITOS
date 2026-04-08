@@ -1,0 +1,10 @@
+exercise: "Wireless-501"
+description: "Wi-Fi capture + WPA2 attack on the dedicated lab AP."
+allowed_targets:
+  - bssid:00:11:22:LAB:AP:01
+  - bssid:00:11:22:LAB:AP:02
+allowed_ports: []
+allowed_tools: [aircrack-ng, ettercap, bettercap, wireshark, tcpdump]
+forbidden_actions:
+  - attack_non_lab_ap
+  - deauth_outside_lab_ssid

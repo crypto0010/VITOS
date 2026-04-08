@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pkg: [vitos-base, vitos-tools, vitos-monitor, vitos-dashboard, vitos-ghost]
+        pkg: [vitos-base, vitos-tools, vitos-monitor, vitos-dashboard, vitos-ghost, vitos-sso, vitos-hardening, vitos-vit-bhopal]
     steps:
       - uses: actions/checkout@v4
 

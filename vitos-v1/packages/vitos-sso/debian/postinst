@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    chmod 0755 /usr/lib/vitos/sso/join.sh /usr/lib/vitos/sso/purge-defaults.sh
+    install -d /var/lib/vitos/sso /var/lib/vitos/legacy-homes
+
+    # Auto-attempt join if /etc/vitos/sso.toml is staged. Fail-soft.
+    if [ -f /etc/vitos/sso.toml ]; then
+      /usr/lib/vitos/sso/join.sh || \
+        echo "vitos-sso: join failed (continuing in v1 fallback mode)" >&2
+    else
+      echo "vitos-sso: no /etc/vitos/sso.toml — staying in v1 fallback mode"
+    fi
+    ;;
+esac
+#DEBHELPER#
+exit 0

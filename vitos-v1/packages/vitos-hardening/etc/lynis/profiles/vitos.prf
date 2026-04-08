@@ -1,0 +1,14 @@
+# VITOS lynis profile — overrides for the academic-lab security distro
+#
+# Skip checks that are intentionally not applicable to a Kali-based live
+# workstation; tighten checks that matter for the lab use case.
+
+skip-test=BOOT-5121          # GRUB password (we ship live ISO + auto-installer)
+skip-test=AUTH-9286          # PAM disabled accounts (vitos-firstboot owns them)
+skip-test=KRNL-5830          # nx bit (custom kernel forces it on)
+test-scan-mode=quick
+log-tests-incorrect-os=no
+upload=no
+quiet=no
+colors=no
+machine-role=server

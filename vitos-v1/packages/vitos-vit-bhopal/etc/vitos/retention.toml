@@ -1,0 +1,17 @@
+# /etc/vitos/retention.toml
+#
+# FERPA (US, advisory only) + India DPDP Act 2023 retention policy.
+# Daily cron at 03:30 trims log files older than the configured limit.
+# Touch /var/lib/vitos/retention.hold to pause trimming for an active
+# investigation.
+
+[events]
+# Telemetry stream — short retention, large volume.
+keep_days = 180
+
+[alerts]
+# AI alerts — longer retention for academic-integrity proceedings.
+keep_days = 365
+
+[dashboard_audit]
+keep_days = 730  # full semester worth + 1 year buffer

@@ -1,0 +1,15 @@
+Source: vitos-hardening
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-hardening
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, debsecan, lynis, cron
+Description: VITOS CVE hardening + lynis profile + quarterly audit cron
+ Ships the VITOS-specific lynis profile, quarterly debsecan/lynis cron
+ entries, and the report templates that the security team fills in
+ during the SP6 pen-test pass. Reports are written to /var/log/vitos/
+ hardening/ and surfaced in the dashboard's Audit page.

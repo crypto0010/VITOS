@@ -1,0 +1,8 @@
+exercise: "Mobile-701"
+description: "Android APK static + dynamic analysis."
+allowed_targets: []   # offline; emulator runs locally
+allowed_ports: []
+allowed_tools: [ghidra, r2, exiftool, binwalk, yara, strings]
+forbidden_actions:
+  - any_outbound_network
+  - install_to_real_device

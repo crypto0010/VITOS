@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    # Render hostname template using the primary interface MAC
+    if [ -f /etc/hostname.template ] && [ ! -f /etc/hostname.set ]; then
+      MAC=$(ip -o link show 2>/dev/null | awk '!/lo/ && /link\/ether/ {print $(NF-2); exit}')
+      [ -z "$MAC" ] && MAC=$(cat /sys/class/net/*/address 2>/dev/null | head -1)
+      SUFFIX=$(printf '%s' "${MAC:-00:00}" | tr -d ':' | tail -c 4)
+      HOST=$(sed "s/{NN}/$SUFFIX/" /etc/hostname.template)
+      echo "$HOST" > /etc/hostname
+      hostnamectl set-hostname "$HOST" 2>/dev/null || true
+      touch /etc/hostname.set
+    fi
+    ;;
+esac
+#DEBHELPER#
+exit 0

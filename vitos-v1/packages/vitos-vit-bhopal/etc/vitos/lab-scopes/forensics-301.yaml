@@ -1,0 +1,7 @@
+exercise: "Forensics-301"
+description: "Disk + memory + file forensics. No network targets."
+allowed_targets: []   # offline-only exercise
+allowed_ports: []
+allowed_tools: [autopsy, volatility3, binwalk, exiftool, fls, yara, strings]
+forbidden_actions:
+  - any_outbound_network

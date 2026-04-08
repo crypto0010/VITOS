@@ -1,0 +1,3 @@
+etc/lynis/profiles/vitos.prf            etc/lynis/profiles
+etc/cron.d/vitos-hardening              etc/cron.d
+usr/lib/vitos/hardening/run-audit.sh    usr/lib/vitos/hardening
