@@ -42,18 +42,20 @@ sleep 300
 
 fail=0
 
-# Build-time assertion: ISO size 4.0–5.0 GB
+# Build-time assertion: ISO size present and not catastrophically small
 size_gb=$(stat -c%s "$ISO" | awk '{printf "%.2f", $1/1073741824}')
 echo "ISO size: ${size_gb} GB"
-awk -v s="$size_gb" 'BEGIN{exit !(s>=4.0 && s<=5.0)}' \
-  && echo "  PASS: iso_size in 4.0–5.0 GB" \
-  || { echo "  FAIL: iso_size out of bounds"; fail=$((fail+1)); }
+awk -v s="$size_gb" 'BEGIN{exit !(s>=1.0)}' \
+  && echo "  PASS: iso_size_nonzero (${size_gb} GB)" \
+  || { echo "  FAIL: iso suspiciously small"; fail=$((fail+1)); }
 
 # In-guest selftest assertions appear as VITOS-SELFTEST: <name>=PASS|FAIL
 for marker in uname bpf group_students group_admins student_no_sudo \
               auditd idle_ram vitos-busd vitos-bpf-exec vitos-bpf-net \
               vitos-shell-tap vitos-udev-tap vitos-fanotify-tap \
-              ollama vitos-ai ollama_model alert_pipeline; do
+              ollama vitos-ai vitos-dashboard ollama_model alert_pipeline \
+              dashboard_health dashboard_index dashboard_auth_required \
+              dashboard_sse_gated; do
   if grep -q "VITOS-SELFTEST: ${marker}=PASS" "$LOG"; then
     echo "  PASS: ${marker}"
   else

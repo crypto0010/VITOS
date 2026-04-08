@@ -1,6 +1,18 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, NavLink } from "react-router-dom";
 import Console from "./pages/Console";
 import Login from "./pages/Login";
+import Network from "./pages/Network";
+import Process from "./pages/Process";
+import Reports from "./pages/Reports";
+import Scopes from "./pages/Scopes";
+import Audit from "./pages/Audit";
+
+const navStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties => ({
+  color: isActive ? "#facc15" : "#7dd3fc",
+  marginRight: "1rem",
+  textDecoration: "none",
+  fontWeight: isActive ? 700 : 400,
+});
 
 export default function App() {
   return (
@@ -11,21 +23,33 @@ export default function App() {
       minHeight: "100vh",
       margin: 0,
     }}>
-      <header style={{ padding: "1rem 2rem", borderBottom: "1px solid #1a1f4a" }}>
-        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>
-          VITOS Admin Console <span style={{ opacity: 0.5, fontSize: "0.9rem" }}>[VIT Bhopal]</span>
+      <header style={{ padding: "0.75rem 2rem", borderBottom: "1px solid #1a1f4a" }}>
+        <h1 style={{ margin: 0, fontSize: "1.4rem" }}>
+          VITOS Admin Console <span style={{ opacity: 0.5, fontSize: "0.85rem" }}>[VIT Bhopal Lab 3]</span>
         </h1>
         <nav style={{ marginTop: "0.5rem" }}>
-          <Link to="/" style={{ color: "#7dd3fc", marginRight: "1rem" }}>Console</Link>
-          <Link to="/login" style={{ color: "#7dd3fc" }}>Login</Link>
+          <NavLink to="/"        style={navStyle} end>Console</NavLink>
+          <NavLink to="/network" style={navStyle}>Network</NavLink>
+          <NavLink to="/process" style={navStyle}>Process</NavLink>
+          <NavLink to="/reports" style={navStyle}>Reports</NavLink>
+          <NavLink to="/scopes"  style={navStyle}>Scopes</NavLink>
+          <NavLink to="/audit"   style={navStyle}>Audit</NavLink>
+          <Link to="/login" style={{ color: "#94a3b8", marginLeft: "1rem" }}>Sign in</Link>
         </nav>
       </header>
-      <main style={{ padding: "2rem" }}>
-        <Routes>
-          <Route path="/" element={<Console />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </main>
+      <Routes>
+        <Route path="/"        element={<Console />} />
+        <Route path="/network" element={<PagePadding><Network /></PagePadding>} />
+        <Route path="/process" element={<PagePadding><Process /></PagePadding>} />
+        <Route path="/reports" element={<PagePadding><Reports /></PagePadding>} />
+        <Route path="/scopes"  element={<PagePadding><Scopes /></PagePadding>} />
+        <Route path="/audit"   element={<PagePadding><Audit /></PagePadding>} />
+        <Route path="/login"   element={<PagePadding><Login /></PagePadding>} />
+      </Routes>
     </div>
   );
+}
+
+function PagePadding({ children }: { children: React.ReactNode }) {
+  return <main style={{ padding: "1.5rem 2rem" }}>{children}</main>;
 }
