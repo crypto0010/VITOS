@@ -8,8 +8,8 @@
 | Role | Name |
 |---|---|
 | Project Director | **Dr. Hemraj Shobharam Lamkuche** — Senior Assistant Professor (Employee ID 100541) |
-| Chief Mentor     | **Dr. Pon Harshavardhanan** |
-| Division Head — Cybersecurity and Digital Forensics | **Dr. Saravanan D.** |
+| Chief Mentor     | **Dr. Pon Harshavardhanan** — Dean (SCAI) and Professor |
+| Division Head | **Dr. Saravanan D.** — Division Head, Cybersecurity and Digital Forensics |
 
 ## Contributing team
 
@@ -18,12 +18,12 @@
 | 1  | Matrupriya Dibyanshu Panda |
 | 2  | Spandan Gope |
 | 3  | Bharat Raghuvanshi |
-| 4  | Mayank Singh Bhadouria |
+| 4  | Ravi Shankar |
 | 5  | Advait Sahu |
 | 6  | Aayushman Arora |
 | 7  | Harsh Singh |
 | 8  | Satyanarayana Murthy V |
-| 9  | Ravi Shankar |
+| 9  | Mayank Singh Bhadouria |
 | 10 | Agnibha |
 | 11 | Leonardo |
 | 12 | Mannat Pal |
@@ -32,6 +32,13 @@
 | 15 | Nahal |
 | 16 | Piyush |
 | 17 | Krishno |
+
+## Contributing Faculty Members
+
+| # | Name |
+|---|---|
+| 1  | Dr. Narrotam Das Patel |
+| 2  | Dr. Ajeet Singh |
 
 ## Institutional affiliation
 
