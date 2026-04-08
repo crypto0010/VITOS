@@ -2,15 +2,21 @@
 
 # Build the React frontend with Vite, then let dh handle the rest.
 # The output dist/ is staged into debian/vitos-dashboard/usr/share/vitos/dashboard/web/
-# via debian/install.
+# via debian/install. dh_missing is downgraded to a warning because the
+# source tree contains many files (src/, vite.config.ts, tsconfig.json,
+# node_modules/, …) that we deliberately do NOT ship.
 
 %:
 	dh $@
 
 override_dh_auto_build:
-	cd web && npm ci --no-audit --no-fund && npm run build
-	dh_auto_build
+	cd web && npm install --no-audit --no-fund --no-package-lock && npm run build
+
+override_dh_auto_install:
+	# debian/install handles everything; no autotools/setuptools install step
+
+override_dh_missing:
+	dh_missing --list-missing
 
 override_dh_auto_clean:
 	rm -rf web/node_modules web/dist
-	dh_auto_clean
