@@ -1,0 +1,15 @@
+[Unit]
+Description=VITOS ttyd for student session %i
+After=vitos-dashboard.service
+Requires=vitos-dashboard.service
+
+[Service]
+Type=simple
+User=vitos-mon
+Group=vitos-mon
+ExecStart=/usr/bin/ttyd -p 0 -i 127.0.0.1 -W tmux attach -t student-%i
+Restart=on-failure
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

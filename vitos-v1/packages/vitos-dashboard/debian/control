@@ -1,0 +1,19 @@
+Source: vitos-dashboard
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13), nodejs (>= 20), npm
+Standards-Version: 4.6.2
+
+Package: vitos-dashboard
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, vitos-monitor,
+ python3 (>= 3.11), python3-fastapi, python3-uvicorn, python3-jinja2,
+ python3-pam, python3-aiofiles, python3-multipart,
+ python3-weasyprint, ttyd, caddy, openssl
+Description: VITOS web admin console (FastAPI + React)
+ Replaces vitosctl with a browser-based admin dashboard. Tails the alert
+ log via SSE, proxies live student terminals through ttyd, renders incident
+ reports as PDF via weasyprint, and exposes a typed REST API over the
+ vitos-busd event bus. PAM authentication against the vitos-admins group;
+ LDAP support arrives in SP6.

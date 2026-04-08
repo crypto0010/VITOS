@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+# Build the React frontend with Vite, then let dh handle the rest.
+# The output dist/ is staged into debian/vitos-dashboard/usr/share/vitos/dashboard/web/
+# via debian/install.
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd web && npm ci --no-audit --no-fund && npm run build
+	dh_auto_build
+
+override_dh_auto_clean:
+	rm -rf web/node_modules web/dist
+	dh_auto_clean

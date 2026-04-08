@@ -1,0 +1,40 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    # State + log dirs
+    install -d -o vitos-mon -g vitos-mon -m 0750 \
+      /var/lib/vitos/dashboard /var/log/vitos
+    touch /var/log/vitos/dashboard-audit.jsonl
+    chown vitos-mon:vitos-mon /var/log/vitos/dashboard-audit.jsonl
+
+    # SQLite session store
+    if [ ! -f /var/lib/vitos/dashboard/sessions.db ]; then
+      sqlite3 /var/lib/vitos/dashboard/sessions.db \
+        "CREATE TABLE sessions (sid TEXT PRIMARY KEY, user TEXT NOT NULL, created TEXT NOT NULL, expires TEXT NOT NULL);"
+      chown vitos-mon:vitos-mon /var/lib/vitos/dashboard/sessions.db
+      chmod 0640 /var/lib/vitos/dashboard/sessions.db
+    fi
+
+    # Self-signed TLS cert (replaced by ACME / lab CA in SP6)
+    CRT=/etc/vitos/dashboard/cert.pem
+    KEY=/etc/vitos/dashboard/key.pem
+    if [ ! -f "$CRT" ]; then
+      install -d -m 0750 /etc/vitos/dashboard
+      openssl req -x509 -nodes -newkey rsa:2048 \
+        -keyout "$KEY" -out "$CRT" -days 365 \
+        -subj '/C=IN/ST=MP/L=Bhopal/O=VIT/CN=vitos-dashboard' >/dev/null 2>&1
+      chmod 0640 "$KEY" "$CRT"
+    fi
+
+    # Caddy site for VITOS dashboard
+    if [ -f /etc/caddy/Caddyfile.vitos ]; then
+      ln -sf /etc/caddy/Caddyfile.vitos /etc/caddy/conf.d/vitos.caddyfile 2>/dev/null || true
+    fi
+
+    systemctl daemon-reload
+    systemctl enable vitos-dashboard.service caddy.service || true
+    ;;
+esac
+#DEBHELPER#
+exit 0

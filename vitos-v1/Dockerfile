@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     imagemagick fonts-dejavu-core \
     golang \
     kali-archive-keyring \
+    nodejs npm \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 ENTRYPOINT ["/bin/bash"]

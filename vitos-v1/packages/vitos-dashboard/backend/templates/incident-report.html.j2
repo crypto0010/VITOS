@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VITOS Incident Report — {{ student_id }}</title>
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; margin: 2em; color: #0a0e2a; }
+    h1 { border-bottom: 3px solid #0a0e2a; padding-bottom: 0.3em; }
+    .meta { color: #666; font-size: 0.9em; }
+    .alert { border-left: 4px solid #e94560; padding: 0.5em 1em; margin: 0.5em 0; background: #fff5f7; }
+    .normal { border-left: 4px solid #16c79a; padding: 0.5em 1em; margin: 0.5em 0; background: #f0fdf9; }
+    pre { background: #f5f5f5; padding: 1em; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>VITOS Incident Report</h1>
+  <p class="meta">Student: <strong>{{ student_id }}</strong> · Generated {{ ts }}</p>
+  <h2>Summary</h2>
+  <p>Total alerts: {{ alerts|length }}</p>
+  {% for a in alerts %}
+    <div class="{{ 'alert' if a.category != 'Normal' else 'normal' }}">
+      <strong>{{ a.ts }}</strong> — {{ a.category }} (score {{ a.score }})<br>
+      {{ a.ai_reason or '(no rationale)' }}
+    </div>
+  {% endfor %}
+</body>
+</html>

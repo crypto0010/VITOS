@@ -1,0 +1,20 @@
+[Unit]
+Description=VITOS Admin Dashboard (FastAPI / uvicorn)
+After=network.target vitos-busd.service
+Wants=vitos-busd.service
+
+[Service]
+Type=simple
+User=vitos-mon
+Group=vitos-mon
+Environment=PYTHONPATH=/usr/lib/vitos/dashboard
+WorkingDirectory=/usr/lib/vitos/dashboard
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8443
+Restart=on-failure
+RestartSec=3
+ProtectSystem=strict
+ReadWritePaths=/var/log/vitos /var/lib/vitos/dashboard
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

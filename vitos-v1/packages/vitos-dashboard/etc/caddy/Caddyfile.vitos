@@ -1,0 +1,18 @@
+# /etc/caddy/Caddyfile.vitos — VITOS Admin Dashboard TLS terminator
+# Bound to all interfaces on 8443. Restrict to lab VLAN via firewall in SP6.
+
+:8443 {
+  tls /etc/vitos/dashboard/cert.pem /etc/vitos/dashboard/key.pem
+  encode gzip
+
+  reverse_proxy 127.0.0.1:8443 {
+    transport http {
+      tls_insecure_skip_verify
+    }
+  }
+
+  log {
+    output file /var/log/caddy/vitos.log
+    format console
+  }
+}

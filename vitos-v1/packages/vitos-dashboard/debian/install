@@ -1,0 +1,17 @@
+backend/app/__init__.py                          usr/lib/vitos/dashboard/app
+backend/app/main.py                              usr/lib/vitos/dashboard/app
+backend/app/auth.py                              usr/lib/vitos/dashboard/app
+backend/app/alerts.py                            usr/lib/vitos/dashboard/app
+backend/app/events.py                            usr/lib/vitos/dashboard/app
+backend/app/sessions.py                          usr/lib/vitos/dashboard/app
+backend/app/students.py                          usr/lib/vitos/dashboard/app
+backend/app/reports.py                           usr/lib/vitos/dashboard/app
+backend/app/ttyd_proxy.py                        usr/lib/vitos/dashboard/app
+backend/app/scopes.py                            usr/lib/vitos/dashboard/app
+backend/app/audit.py                             usr/lib/vitos/dashboard/app
+backend/templates/incident-report.html.j2        usr/lib/vitos/dashboard/templates
+web/dist/index.html                              usr/share/vitos/dashboard/web
+web/dist/assets/                                 usr/share/vitos/dashboard/web/assets
+systemd/vitos-dashboard.service                  lib/systemd/system
+systemd/vitos-dashboard-ttyd@.service            lib/systemd/system
+etc/caddy/Caddyfile.vitos                        etc/caddy
