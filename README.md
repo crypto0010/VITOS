@@ -51,8 +51,6 @@ Linux 6.6.52 kernel:
 - **[`docs/onboarding/faculty-quickstart.md`](docs/onboarding/faculty-quickstart.md)** — 1-page operator guide for faculty
 - **[`docs/deployment/lab-workstation-image.md`](docs/deployment/lab-workstation-image.md)** — per-workstation deployment runbook + pilot bring-up checklist
 - **[`docs/security/vitos-pentest-report.md`](docs/security/vitos-pentest-report.md)** — internal pen-test report template
-- **[`docs/superpowers/specs/`](docs/superpowers/specs/)** — design specs for each sub-project
-- **[`docs/superpowers/plans/`](docs/superpowers/plans/)** — implementation plans
 - **[`vitos-v1/README.md`](vitos-v1/README.md)** — build runbook
 
 ## 🔬 Research notes
