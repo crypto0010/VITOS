@@ -137,10 +137,41 @@ code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   padding: 6rem 2rem 4rem;
   overflow: hidden;
 }
+.hero-inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+}
+.hero-text { text-align: left; }
+.hero-visual {
+  position: relative;
+  width: 100%;
+  height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, var(--bg-2) 0%, var(--bg-0) 100%);
+}
+.hero-visual::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 80%);
+  pointer-events: none;
+}
 #webgl-canvas {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
-  z-index: 0;
+  z-index: 1;
 }
 .hero-grid {
   position: absolute; inset: 0;
@@ -148,14 +179,15 @@ code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
-  z-index: 1;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 60%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 60%);
+  z-index: 0;
+  opacity: 0.5;
 }
-.hero-content {
-  position: relative; z-index: 2;
-  text-align: center;
-  max-width: 1000px;
+@media (max-width: 960px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 2rem; }
+  .hero-text { text-align: center; }
+  .hero-visual { height: 380px; order: -1; }
 }
 .hero-tag {
   display: inline-block;
@@ -203,11 +235,18 @@ code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   margin: 0 0 0.5rem;
 }
 .hero-desc {
-  max-width: 720px; margin: 1.5rem auto 2.5rem;
+  max-width: 600px;
+  margin: 1.5rem 0 2.5rem;
   font-size: 1.05rem;
   color: var(--fg-1);
 }
-.hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.hero-text.hero-text { text-align: left; }
+@media (max-width: 960px) {
+  .hero-desc { margin: 1.5rem auto 2.5rem; }
+  .hero-text.hero-text { text-align: center; }
+}
+.hero-ctas { display: flex; gap: 1rem; justify-content: flex-start; flex-wrap: wrap; }
+@media (max-width: 960px) { .hero-ctas { justify-content: center; } }
 .btn {
   display: inline-flex; align-items: center; gap: 0.5rem;
   font-family: 'JetBrains Mono', monospace;
@@ -476,16 +515,99 @@ section {
 .leader-meta { font-size: 0.85rem; color: var(--fg-2); margin-top: 0.4rem; }
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
   margin-top: 1.5rem;
+  perspective: 800px;
 }
 .team-member {
-  padding: 0.6rem 0.9rem;
+  --member-color: var(--neon-cyan);
+  position: relative;
+  padding: 1rem 1.1rem;
   background: var(--bg-glass);
-  border-left: 2px solid var(--neon-cyan);
+  border: 1px solid var(--member-color);
+  border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--fg-0);
+  text-align: center;
+  box-shadow: 0 0 0 1px transparent, 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+  animation: float 6s ease-in-out infinite;
+  cursor: default;
+  overflow: hidden;
+}
+.team-member::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: var(--member-color);
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.team-member::after {
+  content: "▸";
+  position: absolute;
+  top: 0.5rem; left: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--member-color);
+  opacity: 0.6;
+}
+.team-member:hover {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: 0 0 0 1px var(--member-color), 0 12px 36px rgba(0, 0, 0, 0.4),
+              0 0 24px var(--member-color);
+}
+.team-member:hover::before { opacity: 0.12; }
+
+/* Each member gets a unique animation phase + a color from the palette */
+.team-member:nth-child(1)  { --member-color: #00f5ff; animation-delay: 0s;    }
+.team-member:nth-child(2)  { --member-color: #ff2bd6; animation-delay: 0.3s;  }
+.team-member:nth-child(3)  { --member-color: #f9e000; animation-delay: 0.6s;  }
+.team-member:nth-child(4)  { --member-color: #16ff8e; animation-delay: 0.9s;  }
+.team-member:nth-child(5)  { --member-color: #a855f7; animation-delay: 1.2s;  }
+.team-member:nth-child(6)  { --member-color: #ff7a00; animation-delay: 1.5s;  }
+.team-member:nth-child(7)  { --member-color: #00f5ff; animation-delay: 1.8s;  }
+.team-member:nth-child(8)  { --member-color: #ff2bd6; animation-delay: 2.1s;  }
+.team-member:nth-child(9)  { --member-color: #f9e000; animation-delay: 2.4s;  }
+.team-member:nth-child(10) { --member-color: #16ff8e; animation-delay: 2.7s;  }
+.team-member:nth-child(11) { --member-color: #a855f7; animation-delay: 3.0s;  }
+.team-member:nth-child(12) { --member-color: #ff7a00; animation-delay: 3.3s;  }
+.team-member:nth-child(13) { --member-color: #00f5ff; animation-delay: 3.6s;  }
+.team-member:nth-child(14) { --member-color: #ff2bd6; animation-delay: 3.9s;  }
+.team-member:nth-child(15) { --member-color: #f9e000; animation-delay: 4.2s;  }
+.team-member:nth-child(16) { --member-color: #16ff8e; animation-delay: 4.5s;  }
+.team-member:nth-child(17) { --member-color: #a855f7; animation-delay: 4.8s;  }
+
+/* Light-mode tint adjustment so neons stay readable */
+[data-theme="light"] .team-member:nth-child(1),
+[data-theme="light"] .team-member:nth-child(7),
+[data-theme="light"] .team-member:nth-child(13) { --member-color: #006d8c; }
+[data-theme="light"] .team-member:nth-child(2),
+[data-theme="light"] .team-member:nth-child(8),
+[data-theme="light"] .team-member:nth-child(14) { --member-color: #c2009e; }
+[data-theme="light"] .team-member:nth-child(3),
+[data-theme="light"] .team-member:nth-child(9),
+[data-theme="light"] .team-member:nth-child(15) { --member-color: #b58900; }
+[data-theme="light"] .team-member:nth-child(4),
+[data-theme="light"] .team-member:nth-child(10),
+[data-theme="light"] .team-member:nth-child(16) { --member-color: #00875a; }
+[data-theme="light"] .team-member:nth-child(5),
+[data-theme="light"] .team-member:nth-child(11),
+[data-theme="light"] .team-member:nth-child(17) { --member-color: #7e22ce; }
+[data-theme="light"] .team-member:nth-child(6),
+[data-theme="light"] .team-member:nth-child(12) { --member-color: #c2410c; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25%      { transform: translateY(-6px) rotate(0.3deg); }
+  50%      { transform: translateY(0px)  rotate(0deg); }
+  75%      { transform: translateY(-3px) rotate(-0.3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-member { animation: none; }
 }
 
 /* ==================== contact ==================== */
@@ -604,7 +726,6 @@ footer .footer-credit {
 
 <!-- ==================== hero ==================== -->
 <header class="hero">
-  <canvas id="webgl-canvas" aria-hidden="true"></canvas>
   <div class="hero-grid"></div>
 
   <a href="https://vitbhopal.ac.in" target="_blank" rel="noopener" class="hero-vit-badge">
@@ -612,25 +733,31 @@ footer .footer-credit {
     <div class="hero-vit-badge-text">VIT BHOPAL</div>
   </a>
 
-  <div class="hero-content">
-    <span class="hero-tag">v1.0.0 // Released 2026-04-08</span>
-    <h1>VITOS</h1>
-    <p class="hero-sub">VIT Cybersecurity Lab Operating System</p>
-    <p class="hero-desc">
-      A Kali-based academic security distribution with <strong>AI-powered behavioral
-      monitoring</strong>, sandboxed pentesting tools, kernel-level eBPF telemetry,
-      WireGuard/Tor Ghost Mode, and a real-time admin dashboard. Designed and
-      developed at the Cybersecurity and Digital Forensics Lab,
-      <strong>VIT Bhopal University</strong>.
-    </p>
-    <div class="hero-ctas">
-      <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.0" target="_blank" rel="noopener">
-        ⬇ Download v1.0.0
-      </a>
-      <a class="btn" href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">
-        ⌨ Source
-      </a>
-      <a class="btn" href="#features">▸ Explore</a>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <span class="hero-tag">v1.0.0 // Released 2026-04-08</span>
+      <h1>VITOS</h1>
+      <p class="hero-sub">VIT Operating System</p>
+      <p class="hero-desc">
+        A Kali-based academic security distribution with <strong>AI-powered
+        behavioral monitoring</strong>, sandboxed pentesting tools, kernel-level
+        eBPF telemetry, WireGuard/Tor Ghost Mode, and a real-time admin
+        dashboard. Designed and developed at the Cybersecurity and Digital
+        Forensics Lab, <strong>VIT Bhopal University</strong>.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.0" target="_blank" rel="noopener">
+          ⬇ Download v1.0.0
+        </a>
+        <a class="btn" href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">
+          ⌨ Source
+        </a>
+        <a class="btn" href="#features">▸ Explore</a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <canvas id="webgl-canvas" aria-hidden="true"></canvas>
     </div>
   </div>
 </header>
@@ -814,7 +941,7 @@ footer .footer-credit {
     <div class="leader">
       <div class="leader-role">Chief Mentor</div>
       <div class="leader-name">Dr. Pon Harshavardhanan</div>
-      <div class="leader-meta">Cybersecurity & Digital Forensics</div>
+      <div class="leader-meta">Dean, SCAI</div>
     </div>
     <div class="leader">
       <div class="leader-role">Division Head</div>
@@ -999,9 +1126,9 @@ window.addEventListener('mousemove', (e) => {
 
 // === resize ===
 function resize() {
-  const hero = document.querySelector('.hero');
-  const w = hero.clientWidth;
-  const h = hero.clientHeight;
+  const visual = document.querySelector('.hero-visual');
+  const w = visual.clientWidth;
+  const h = visual.clientHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
