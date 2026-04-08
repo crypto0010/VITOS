@@ -692,6 +692,211 @@ section {
   .team-member { animation: none; }
 }
 
+/* ==================== download ==================== */
+.download-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+@media (max-width: 900px) { .download-grid { grid-template-columns: 1fr; } }
+
+.download-card {
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.download-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-yellow));
+}
+.download-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.3rem;
+  color: var(--neon-cyan);
+}
+.download-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+}
+
+.download-files {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+.download-files li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.4rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--neon-cyan);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.download-files li:hover {
+  border-color: var(--neon-cyan);
+  border-left-color: var(--neon-magenta);
+  box-shadow: var(--shadow);
+}
+.download-files .fname { color: var(--fg-0); }
+.download-files .fsize { color: var(--neon-cyan); font-size: 0.75rem; }
+
+.download-cta-row {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.snippet {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.1rem;
+  margin: 0.6rem 0;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--fg-0);
+  position: relative;
+}
+.snippet::before {
+  content: "$";
+  position: absolute;
+  left: 0.4rem; top: 1rem;
+  color: var(--neon-magenta);
+  font-weight: 700;
+}
+.snippet { padding-left: 2rem; }
+.snippet .ck { color: var(--neon-cyan); }
+.snippet .cm { color: var(--fg-2); }
+
+.download-howto {
+  font-size: 0.9rem;
+  color: var(--fg-1);
+  line-height: 1.7;
+}
+.download-howto strong { color: var(--neon-cyan); }
+.download-howto ol { padding-left: 1.2rem; margin: 0.75rem 0; }
+.download-howto li { margin-bottom: 0.4rem; }
+
+.verify-card {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.verify-card::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--neon-yellow), var(--neon-cyan));
+}
+.verify-card h3 { margin: 0 0 0.4rem; color: var(--neon-yellow); font-size: 1.2rem; }
+.verify-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--fg-2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.verify-meta .release-tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  background: var(--neon-cyan);
+  color: var(--bg-0);
+  border-radius: 3px;
+  font-weight: 700;
+}
+.hash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  margin-top: 0.5rem;
+  table-layout: fixed;
+}
+.hash-table tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.hash-table tr:hover { background: rgba(0, 245, 255, 0.04); }
+.hash-table td {
+  padding: 0.65rem 0.5rem;
+  vertical-align: middle;
+  word-break: break-all;
+}
+.hash-table td.hash {
+  color: var(--neon-cyan);
+  font-weight: 500;
+  width: 65%;
+}
+.hash-table td.fname {
+  color: var(--fg-0);
+  width: 25%;
+}
+.hash-table td.copy {
+  width: 10%;
+  text-align: right;
+}
+.hash-table .copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--neon-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+}
+.hash-table .copy-btn:hover {
+  background: var(--neon-cyan);
+  color: var(--bg-0);
+  box-shadow: 0 0 12px var(--neon-cyan);
+}
+.hash-table .copy-btn.copied {
+  background: var(--neon-green);
+  border-color: var(--neon-green);
+  color: var(--bg-0);
+}
+.hash-loading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--fg-2);
+  padding: 1rem 0;
+}
+.hash-loading::before { content: "▸ "; color: var(--neon-magenta); }
+.hash-error {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--danger);
+  padding: 1rem 0;
+}
+@media (max-width: 700px) {
+  .hash-table { font-size: 0.65rem; }
+  .hash-table td { padding: 0.5rem 0.25rem; }
+  .hash-table td.fname { width: 30%; }
+  .hash-table td.hash { width: 60%; }
+  .hash-table td.copy { width: 10%; }
+}
+
 /* ==================== contact ==================== */
 .contact-card {
   display: grid;
@@ -805,6 +1010,7 @@ footer .footer-credit {
     <a href="#audience">Who it's for</a>
     <a href="#stack">Stack</a>
     <a href="#team">Team</a>
+    <a href="#download">Download</a>
     <a href="#contact">Contact</a>
     <a href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">GitHub ↗</a>
     <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
@@ -824,7 +1030,7 @@ footer .footer-credit {
 
   <div class="hero-inner">
     <div class="hero-text">
-      <span class="hero-tag">v1.0.0 // Released 2026-04-08</span>
+      <span class="hero-tag">v1.0.1 // Released 2026-04-08</span>
       <h1>VITOS</h1>
       <p class="hero-sub">VIT Operating System</p>
       <p class="hero-desc">
@@ -835,8 +1041,8 @@ footer .footer-credit {
         Forensics Lab, <strong>VIT Bhopal University</strong>.
       </p>
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.0" target="_blank" rel="noopener">
-          ⬇ Download v1.0.0
+        <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.1" target="_blank" rel="noopener">
+          ⬇ Download v1.0.1
         </a>
         <a class="btn" href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">
           ⌨ Source
@@ -1061,6 +1267,86 @@ footer .footer-credit {
   </div>
 </section>
 
+<!-- ==================== download ==================== -->
+<section id="download">
+  <span class="section-eyebrow">Download</span>
+  <h2 class="section-title">Get <span class="accent">VITOS v1.0.1</span></h2>
+  <p class="section-lead">
+    The full ISO is ~8.5 GB, split into 5 parts (≤1.9 GB each) so it fits within
+    GitHub Releases' 2 GB-per-asset cap. Download all parts plus
+    <code>SHA256SUMS</code>, then concatenate.
+  </p>
+
+  <div class="download-grid">
+    <div class="download-card">
+      <h3>⬇ Release assets</h3>
+      <div class="download-meta">v1.0.1 · amd64 · ~8.5 GB · SHA256-verified</div>
+      <ul class="download-files">
+        <li><span class="fname">vitos-v1-amd64.part00.iso</span><span class="fsize">~1.9 GB</span></li>
+        <li><span class="fname">vitos-v1-amd64.part01.iso</span><span class="fsize">~1.9 GB</span></li>
+        <li><span class="fname">vitos-v1-amd64.part02.iso</span><span class="fsize">~1.9 GB</span></li>
+        <li><span class="fname">vitos-v1-amd64.part03.iso</span><span class="fsize">~1.9 GB</span></li>
+        <li><span class="fname">vitos-v1-amd64.part04.iso</span><span class="fsize">~1.0 GB</span></li>
+        <li><span class="fname">SHA256SUMS</span><span class="fsize">tiny</span></li>
+        <li><span class="fname">REASSEMBLE.md</span><span class="fsize">tiny</span></li>
+      </ul>
+      <div class="download-cta-row">
+        <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.1" target="_blank" rel="noopener">
+          ⬇ Get all parts
+        </a>
+        <a class="btn" href="https://github.com/crypto0010/VITOS/releases/latest" target="_blank" rel="noopener">
+          ◷ Latest release
+        </a>
+      </div>
+    </div>
+
+    <div class="download-card" id="verify-anchor">
+      <h3>⌘ Reassemble + verify</h3>
+      <div class="download-meta">3 commands · zero magic</div>
+      <div class="download-howto">
+        <ol>
+          <li>Download every <code>.part*.iso</code> file plus <code>SHA256SUMS</code> from the release page</li>
+          <li>Concatenate the parts in order:</li>
+        </ol>
+<code class="snippet"><span class="cm"># reassemble
+</span>cat vitos-v1-*-amd64.part*.iso > vitos-v1-amd64.iso
+
+<span class="cm"># verify
+</span>sha256sum -c SHA256SUMS
+
+<span class="cm"># burn to USB (replace sdX)
+</span>sudo dd if=vitos-v1-amd64.iso of=/dev/sdX bs=4M status=progress oflag=sync</code>
+        <p>Or boot it directly in QEMU/KVM:</p>
+<code class="snippet">qemu-system-x86_64 -enable-kvm -m 6144 -smp 4 \
+  -cdrom vitos-v1-amd64.iso -boot d \
+  -vga virtio -display gtk</code>
+        <p style="margin-top: 1rem; font-size: 0.85rem; opacity: 0.7;">
+          Default credentials (forced password change on first login):
+          <code>admin:changeme</code>, <code>student:changeme</code>.
+          Replaced by FreeIPA on a successful realm join.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- live-fetched SHA-256 hashes from the latest release -->
+  <div class="verify-card">
+    <h3>🔐 SHA-256 verification hashes</h3>
+    <div class="verify-meta">
+      Auto-fetched from <code>github.com/crypto0010/VITOS/releases/latest</code>
+      <span class="release-tag" id="release-tag-pill">…</span>
+    </div>
+    <p style="font-size: 0.88rem; color: var(--fg-1); margin: 0.5rem 0 0.75rem;">
+      Compare these against the output of <code>sha256sum vitos-v1-amd64.part00.iso</code>
+      after each download. They are pulled live from the published GitHub Release —
+      no manual editing — so they always match the asset you'll actually download.
+    </p>
+    <div id="hash-table-mount">
+      <div class="hash-loading">Fetching hashes from the GitHub Release API…</div>
+    </div>
+  </div>
+</section>
+
 <!-- ==================== contact ==================== -->
 <section id="contact">
   <span class="section-eyebrow">Contact</span>
@@ -1101,7 +1387,7 @@ footer .footer-credit {
 <!-- ==================== footer ==================== -->
 <footer>
   <div class="footer-brand">VITOS</div>
-  <div>VIT Cybersecurity Lab Operating System · v1.0.0</div>
+  <div>VIT Operating System · v1.0.1</div>
   <div class="footer-credit">
     Designed and developed at the<br>
     <strong>Cybersecurity and Digital Forensics Lab</strong> · <strong>VIT Bhopal University</strong><br>
@@ -1433,6 +1719,88 @@ document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
   requestAnimationFrame(frame);
 
   window.addEventListener('vitos:themechange', () => { colors = getColors(); });
+})();
+</script>
+
+<!-- ==================== live SHA-256 fetcher ==================== -->
+<script>
+(async () => {
+  const mount = document.getElementById('hash-table-mount');
+  const tagPill = document.getElementById('release-tag-pill');
+  if (!mount) return;
+
+  const CACHE_KEY = 'vitos-hashes-v1';
+  const CACHE_TTL = 60 * 60 * 1000; // 1 h
+  const cached = (() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (Date.now() - obj.t > CACHE_TTL) return null;
+      return obj;
+    } catch { return null; }
+  })();
+
+  function render(tag, lines) {
+    tagPill.textContent = tag;
+    if (!lines.length) {
+      mount.innerHTML = '<div class="hash-error">SHA256SUMS asset not found in the latest release.</div>';
+      return;
+    }
+    const rows = lines.map((l, i) => {
+      const m = l.trim().match(/^([0-9a-f]{64})\s+\*?(.+)$/i);
+      if (!m) return '';
+      const hash = m[1];
+      const fname = m[2];
+      const id = 'h' + i;
+      return `
+        <tr>
+          <td class="fname" title="${fname}">${fname}</td>
+          <td class="hash" id="${id}">${hash}</td>
+          <td class="copy">
+            <button type="button" class="copy-btn" data-target="${id}" data-hash="${hash}">COPY</button>
+          </td>
+        </tr>`;
+    }).join('');
+    mount.innerHTML = `<table class="hash-table"><tbody>${rows}</tbody></table>`;
+
+    mount.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.hash);
+          const old = btn.textContent;
+          btn.classList.add('copied');
+          btn.textContent = '✓ COPIED';
+          setTimeout(() => { btn.classList.remove('copied'); btn.textContent = old; }, 1500);
+        } catch {
+          btn.textContent = 'FAIL';
+        }
+      });
+    });
+  }
+
+  if (cached) { render(cached.tag, cached.lines); return; }
+
+  try {
+    const r = await fetch('https://api.github.com/repos/crypto0010/VITOS/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' }
+    });
+    if (!r.ok) throw new Error('release API ' + r.status);
+    const release = await r.json();
+    const sumsAsset = (release.assets || []).find((a) => a.name === 'SHA256SUMS');
+    if (!sumsAsset) throw new Error('no SHA256SUMS asset');
+
+    const sumsRes = await fetch(sumsAsset.browser_download_url);
+    if (!sumsRes.ok) throw new Error('SHA256SUMS fetch ' + sumsRes.status);
+    const txt = await sumsRes.text();
+    const lines = txt.split('\n').filter((l) => l.trim().length);
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), tag: release.tag_name, lines }));
+    render(release.tag_name, lines);
+  } catch (e) {
+    tagPill.textContent = 'unavailable';
+    mount.innerHTML = `<div class="hash-error">Could not fetch hashes (${e.message}). View them on the <a href="https://github.com/crypto0010/VITOS/releases/latest" target="_blank" rel="noopener">release page</a> directly.</div>`;
+  }
 })();
 </script>
 
