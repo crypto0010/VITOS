@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VITOS — VIT Cybersecurity Lab Operating System</title>
+<meta name="description" content="VITOS — a Kali-based academic security distro for the VIT Bhopal cybersecurity lab. AI-powered behavioral monitoring, sandboxed pentesting, eBPF telemetry, FreeIPA SSO, Ghost Mode." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ==================== theme tokens ==================== */
+:root[data-theme="dark"] {
+  --bg-0: #04060f;
+  --bg-1: #0a0e2a;
+  --bg-2: #11163a;
+  --bg-glass: rgba(17, 22, 58, 0.55);
+  --fg-0: #e8edff;
+  --fg-1: #a8b1cf;
+  --fg-2: #6b7390;
+  --neon-cyan: #00f5ff;
+  --neon-magenta: #ff2bd6;
+  --neon-yellow: #f9e000;
+  --neon-green: #16ff8e;
+  --danger: #ff2e63;
+  --grid: rgba(0, 245, 255, 0.08);
+  --border: rgba(0, 245, 255, 0.18);
+  --shadow: 0 0 24px rgba(0, 245, 255, 0.18);
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg-0: #f5f7fa;
+  --bg-1: #ffffff;
+  --bg-2: #eef1f7;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --fg-0: #0a0e2a;
+  --fg-1: #2c3252;
+  --fg-2: #6c7393;
+  --neon-cyan: #006d8c;
+  --neon-magenta: #c2009e;
+  --neon-yellow: #b58900;
+  --neon-green: #00875a;
+  --danger: #d62246;
+  --grid: rgba(0, 109, 140, 0.07);
+  --border: rgba(10, 14, 42, 0.12);
+  --shadow: 0 8px 32px rgba(10, 14, 42, 0.08);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg-0); color: var(--fg-0); }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+a { color: var(--neon-cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4 { font-family: 'Orbitron', system-ui, sans-serif; letter-spacing: 0.04em; }
+code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+/* CRT scanlines for dark mode */
+[data-theme="dark"] body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 245, 255, 0.03) 0px,
+      rgba(0, 245, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 3px);
+  z-index: 1000;
+  mix-blend-mode: overlay;
+}
+
+/* ==================== nav ==================== */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-family: 'Orbitron', sans-serif; font-weight: 900;
+  font-size: 1.2rem; letter-spacing: 0.12em;
+}
+.nav-brand-mark {
+  width: 32px; height: 32px;
+  border: 2px solid var(--neon-cyan);
+  background:
+    linear-gradient(135deg, transparent 0%, transparent 49%, var(--neon-cyan) 50%, transparent 51%, transparent 100%),
+    linear-gradient(45deg, transparent 0%, transparent 49%, var(--neon-magenta) 50%, transparent 51%, transparent 100%);
+  position: relative;
+  animation: spin 20s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.nav-brand-mark::after {
+  content: ""; position: absolute; inset: 4px;
+  border: 1px solid var(--neon-cyan);
+}
+.nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.nav-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--fg-1);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.nav-links a:hover { color: var(--neon-cyan); text-decoration: none; }
+.theme-toggle {
+  background: transparent; border: 1px solid var(--border); color: var(--fg-0);
+  font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+  padding: 0.4rem 0.75rem; cursor: pointer; border-radius: 4px;
+  display: flex; align-items: center; gap: 0.4rem;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: var(--shadow); }
+@media (max-width: 768px) {
+  .nav { padding: 0.75rem 1rem; }
+  .nav-links a:not(.theme-toggle) { display: none; }
+}
+
+/* ==================== hero ==================== */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 6rem 2rem 4rem;
+  overflow: hidden;
+}
+#webgl-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  z-index: 1;
+}
+.hero-content {
+  position: relative; z-index: 2;
+  text-align: center;
+  max-width: 1000px;
+}
+.hero-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+  padding: 0.4rem 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-glass);
+}
+.hero-tag::before { content: "▸ "; color: var(--neon-magenta); }
+.hero h1 {
+  font-size: clamp(3rem, 9vw, 7rem);
+  font-weight: 900;
+  margin: 0 0 1rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-magenta) 50%, var(--neon-yellow) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 60px rgba(0, 245, 255, 0.4);
+  position: relative;
+  display: inline-block;
+}
+.hero h1::after {
+  content: "VITOS";
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: blur(18px);
+  opacity: 0.6;
+  z-index: -1;
+}
+.hero-sub {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(0.95rem, 2vw, 1.4rem);
+  color: var(--fg-1);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0 0 0.5rem;
+}
+.hero-desc {
+  max-width: 720px; margin: 1.5rem auto 2.5rem;
+  font-size: 1.05rem;
+  color: var(--fg-1);
+}
+.hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 0.95rem 1.6rem;
+  border: 1px solid var(--neon-cyan);
+  background: transparent;
+  color: var(--neon-cyan);
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.btn::before {
+  content: ""; position: absolute; inset: 0;
+  background: var(--neon-cyan); opacity: 0; transition: opacity 0.25s;
+  z-index: -1;
+}
+.btn:hover { color: var(--bg-0); text-decoration: none; box-shadow: var(--shadow); }
+.btn:hover::before { opacity: 1; }
+.btn-primary { background: var(--neon-cyan); color: var(--bg-0); }
+.btn-primary:hover { background: var(--neon-magenta); border-color: var(--neon-magenta); box-shadow: 0 0 30px var(--neon-magenta); }
+
+.hero-vit-badge {
+  position: absolute; top: 5rem; right: 2rem; z-index: 3;
+  width: 110px; padding: 0.6rem 0.8rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.hero-vit-badge img { width: 100%; height: auto; filter: brightness(1.1); }
+[data-theme="dark"] .hero-vit-badge img { filter: brightness(2) invert(1) hue-rotate(180deg); }
+.hero-vit-badge-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--neon-cyan);
+  margin-top: 0.3rem;
+  letter-spacing: 0.1em;
+}
+@media (max-width: 768px) { .hero-vit-badge { top: 4rem; right: 1rem; width: 80px; } }
+
+/* ==================== sections ==================== */
+section {
+  padding: 6rem 2rem;
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.section-eyebrow {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--neon-magenta);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.section-eyebrow::before { content: "// "; opacity: 0.5; }
+.section-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 0 0 1rem;
+  font-weight: 900;
+}
+.section-title .accent { color: var(--neon-cyan); }
+.section-lead {
+  max-width: 720px;
+  font-size: 1.1rem;
+  color: var(--fg-1);
+  margin-bottom: 3rem;
+}
+
+/* ==================== about ==================== */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+@media (max-width: 900px) { .about-grid { grid-template-columns: 1fr; } }
+.about-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.stat-card {
+  padding: 1.25rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+}
+.stat-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  line-height: 1;
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 0.4rem;
+}
+
+/* ==================== feature cards ==================== */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+.feature {
+  position: relative;
+  padding: 1.75rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s;
+  overflow: hidden;
+}
+.feature::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+  opacity: 0; transition: opacity 0.3s;
+}
+.feature:hover {
+  transform: translateY(-4px);
+  border-color: var(--neon-cyan);
+  box-shadow: var(--shadow);
+}
+.feature:hover::before { opacity: 1; }
+.feature-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--neon-magenta);
+  letter-spacing: 0.15em;
+  margin-bottom: 0.5rem;
+}
+.feature h3 {
+  font-size: 1.15rem;
+  margin: 0.3rem 0 0.75rem;
+  color: var(--fg-0);
+}
+.feature p {
+  font-size: 0.92rem;
+  color: var(--fg-1);
+  margin: 0 0 0.75rem;
+}
+.feature-tags {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin-top: 1rem;
+}
+.feature-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(0, 245, 255, 0.08);
+  border: 1px solid var(--border);
+  color: var(--neon-cyan);
+  letter-spacing: 0.05em;
+}
+
+/* ==================== for-whom ==================== */
+.audience-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+@media (max-width: 800px) { .audience-grid { grid-template-columns: 1fr; } }
+.audience-card {
+  padding: 2.5rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.audience-card::before {
+  content: ""; position: absolute; top: -50%; right: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, var(--neon-cyan) 0%, transparent 60%);
+  opacity: 0.04;
+  pointer-events: none;
+}
+.audience-icon {
+  display: inline-block;
+  width: 56px; height: 56px;
+  border: 2px solid var(--neon-cyan);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.4rem; font-weight: 900;
+  color: var(--neon-cyan);
+  margin-bottom: 1rem;
+  position: relative;
+}
+.audience-icon.magenta { border-color: var(--neon-magenta); color: var(--neon-magenta); }
+.audience-card h3 { font-size: 1.5rem; margin: 0 0 1rem; }
+.audience-card ul {
+  list-style: none; padding: 0; margin: 1rem 0 0;
+}
+.audience-card li {
+  padding: 0.5rem 0 0.5rem 1.6rem;
+  position: relative;
+  font-size: 0.95rem;
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border);
+}
+.audience-card li::before {
+  content: "▸";
+  position: absolute; left: 0;
+  color: var(--neon-cyan);
+}
+.audience-card.researcher li::before { color: var(--neon-magenta); }
+.audience-card li:last-child { border-bottom: none; }
+
+/* ==================== tech stack ==================== */
+.stack-marquee {
+  display: flex; flex-wrap: wrap; gap: 0.6rem;
+  margin-top: 2rem;
+}
+.stack-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.55rem 1rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-0);
+  transition: all 0.2s;
+}
+.stack-pill:hover {
+  border-color: var(--neon-cyan);
+  color: var(--neon-cyan);
+  transform: translateY(-2px);
+}
+
+/* ==================== team ==================== */
+.team-leadership {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.leader {
+  padding: 1.75rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+.leader-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.5rem;
+}
+.leader-name { font-family: 'Orbitron', sans-serif; font-size: 1.15rem; font-weight: 700; }
+.leader-meta { font-size: 0.85rem; color: var(--fg-2); margin-top: 0.4rem; }
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+.team-member {
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-glass);
+  border-left: 2px solid var(--neon-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+
+/* ==================== contact ==================== */
+.contact-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2rem;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.contact-card::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(135deg,
+      transparent, transparent 40px,
+      rgba(0, 245, 255, 0.025) 40px, rgba(0, 245, 255, 0.025) 41px);
+  pointer-events: none;
+}
+@media (max-width: 700px) { .contact-card { grid-template-columns: 1fr; padding: 1.75rem; } }
+.contact-portrait {
+  width: 140px; height: 140px;
+  border: 3px solid var(--neon-cyan);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 3rem; font-weight: 900;
+  color: var(--neon-cyan);
+  background: var(--bg-1);
+  position: relative;
+  flex-shrink: 0;
+}
+.contact-portrait::after {
+  content: ""; position: absolute; inset: -8px;
+  border: 1px solid var(--neon-magenta);
+  opacity: 0.5;
+}
+.contact-info h3 { font-size: 1.5rem; margin: 0 0 0.3rem; }
+.contact-info .role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+}
+.contact-rows {
+  display: flex; flex-direction: column; gap: 0.7rem;
+  margin-top: 1.25rem;
+}
+.contact-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+.contact-row .label { color: var(--neon-magenta); min-width: 80px; }
+.contact-row .value { color: var(--fg-0); word-break: break-all; }
+
+/* ==================== footer ==================== */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem 2rem;
+  text-align: center;
+  color: var(--fg-2);
+  font-size: 0.85rem;
+}
+footer .footer-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem; font-weight: 900;
+  color: var(--neon-cyan);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+footer .footer-credit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  margin-top: 1rem;
+  line-height: 1.8;
+}
+
+/* fade-in on scroll */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ==================== nav ==================== -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-brand-mark"></div>
+    VITOS
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#audience">Who it's for</a>
+    <a href="#stack">Stack</a>
+    <a href="#team">Team</a>
+    <a href="#contact">Contact</a>
+    <a href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">GitHub ↗</a>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+      <span id="theme-icon">◐</span> <span id="theme-label">DARK</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ==================== hero ==================== -->
+<header class="hero">
+  <canvas id="webgl-canvas" aria-hidden="true"></canvas>
+  <div class="hero-grid"></div>
+
+  <a href="https://vitbhopal.ac.in" target="_blank" rel="noopener" class="hero-vit-badge">
+    <img src="vit-bhopal-logo.png" alt="VIT Bhopal University" />
+    <div class="hero-vit-badge-text">VIT BHOPAL</div>
+  </a>
+
+  <div class="hero-content">
+    <span class="hero-tag">v1.0.0 // Released 2026-04-08</span>
+    <h1>VITOS</h1>
+    <p class="hero-sub">VIT Cybersecurity Lab Operating System</p>
+    <p class="hero-desc">
+      A Kali-based academic security distribution with <strong>AI-powered behavioral
+      monitoring</strong>, sandboxed pentesting tools, kernel-level eBPF telemetry,
+      WireGuard/Tor Ghost Mode, and a real-time admin dashboard. Designed and
+      developed at the Cybersecurity and Digital Forensics Lab,
+      <strong>VIT Bhopal University</strong>.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="https://github.com/crypto0010/VITOS/releases/tag/v1.0.0" target="_blank" rel="noopener">
+        ⬇ Download v1.0.0
+      </a>
+      <a class="btn" href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">
+        ⌨ Source
+      </a>
+      <a class="btn" href="#features">▸ Explore</a>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== about ==================== -->
+<section id="about">
+  <span class="section-eyebrow">About</span>
+  <h2 class="section-title">Built for the <span class="accent">academic</span> cybersecurity classroom</h2>
+  <div class="about-grid">
+    <div>
+      <p class="section-lead">
+        VITOS is a complete operating system that pairs the standard Kali Linux
+        pentesting toolchain with an academic-integrity layer: every student
+        action is sandboxed, every tool execution is logged, and a local AI
+        engine watches for behavior outside the assigned lab exercise. It's the
+        operating system our cybersecurity students actually use — built by us,
+        for us.
+      </p>
+      <p style="color: var(--fg-1);">
+        v1.0.0 ships <strong>8 Debian packages</strong> on top of a custom
+        hardened Linux 6.6 kernel, fits on a 16 GB USB stick, and boots on
+        any x86-64 lab workstation. The whole stack runs locally — no cloud
+        dependency, no telemetry leaving the lab network.
+      </p>
+    </div>
+    <div class="about-stats">
+      <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Debian packages</div></div>
+      <div class="stat-card"><div class="stat-num">37</div><div class="stat-label">Smoke assertions</div></div>
+      <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label">On-device AI</div></div>
+      <div class="stat-card"><div class="stat-num">0</div><div class="stat-label">Cloud calls</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== features ==================== -->
+<section id="features">
+  <span class="section-eyebrow">Features</span>
+  <h2 class="section-title">Eight layers, <span class="accent">one ISO</span></h2>
+  <p class="section-lead">Each layer is a Debian package; together they make a turn-key academic security lab.</p>
+
+  <div class="features-grid">
+    <div class="feature">
+      <div class="feature-num">[01]</div>
+      <h3>vitos-base</h3>
+      <p>Custom Linux 6.6 LTS kernel with eBPF, LSM, namespaces, fanotify, cgroup-bpf forced on. PAM consent banner, sudoers, Plymouth boot theme.</p>
+      <div class="feature-tags"><span class="feature-tag">linux 6.6</span><span class="feature-tag">eBPF</span><span class="feature-tag">PAM</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[02]</div>
+      <h3>vitos-tools</h3>
+      <p>Every Kali pentest tool wrapped in a Firejail sandbox: Metasploit, Burp Suite, Ghidra, Wireshark, sqlmap, hydra, hashcat, aircrack-ng, and more.</p>
+      <div class="feature-tags"><span class="feature-tag">firejail</span><span class="feature-tag">metasploit</span><span class="feature-tag">burp</span><span class="feature-tag">ghidra</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[03]</div>
+      <h3>vitos-monitor</h3>
+      <p>eBPF + auditd telemetry collectors, Python AI behavioral engine, Ollama gemma3:4b LLM for command intent classification, Isolation Forest for anomaly detection. <code>vitosctl</code> admin CLI.</p>
+      <div class="feature-tags"><span class="feature-tag">eBPF</span><span class="feature-tag">ollama</span><span class="feature-tag">scikit-learn</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[04]</div>
+      <h3>vitos-dashboard</h3>
+      <p>FastAPI + React admin web console: live student roster with risk badges, embedded terminal view via xterm.js, alert SSE stream, PDF incident reports.</p>
+      <div class="feature-tags"><span class="feature-tag">fastapi</span><span class="feature-tag">react</span><span class="feature-tag">xterm.js</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[05]</div>
+      <h3>vitos-ghost</h3>
+      <p>WireGuard + Tor network namespace isolation with nftables kill-switch and MAC randomization. Dual-admin approval — no single admin can self-approve.</p>
+      <div class="feature-tags"><span class="feature-tag">wireguard</span><span class="feature-tag">tor</span><span class="feature-tag">nftables</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[06]</div>
+      <h3>vitos-sso</h3>
+      <p>FreeIPA / LDAP single sign-on integration. On a successful join the v1 hardcoded accounts are archived and replaced by university directory credentials.</p>
+      <div class="feature-tags"><span class="feature-tag">freeipa</span><span class="feature-tag">sssd</span><span class="feature-tag">pam</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[07]</div>
+      <h3>vitos-hardening</h3>
+      <p>Lynis profile, quarterly debsecan CVE cron, internal pen-test report template covering all 8 custom components and the AI engine threat model.</p>
+      <div class="feature-tags"><span class="feature-tag">lynis</span><span class="feature-tag">debsecan</span></div>
+    </div>
+    <div class="feature">
+      <div class="feature-num">[08]</div>
+      <h3>vitos-vit-bhopal</h3>
+      <p>Site overlay: 8 lab-exercise scope manifests (recon → capstone), FERPA + India DPDP retention cron, hostname template, faculty quickstart, unattended installer.</p>
+      <div class="feature-tags"><span class="feature-tag">FERPA</span><span class="feature-tag">DPDP</span><span class="feature-tag">preseed</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== audience ==================== -->
+<section id="audience">
+  <span class="section-eyebrow">Who it's for</span>
+  <h2 class="section-title">Who <span class="accent">benefits</span> from VITOS</h2>
+
+  <div class="audience-grid">
+    <div class="audience-card">
+      <div class="audience-icon">👩‍💻</div>
+      <h3>Students</h3>
+      <p style="color: var(--fg-1);">Hands-on cybersecurity learning with safety rails that prevent costly mistakes.</p>
+      <ul>
+        <li>Boot to a fully-loaded Kali workstation with every standard pentest tool, no setup</li>
+        <li>Experiment freely inside a Firejail sandbox — no risk of damaging shared infra</li>
+        <li>Work through 8 structured lab exercises (recon, exploit, forensics, malware, wireless, web, mobile, capstone)</li>
+        <li>See instantly if a command is "out of scope" for the current exercise</li>
+        <li>Get academic-integrity protection: AI flags are advisory and reviewed by humans, never automatic punishment</li>
+      </ul>
+    </div>
+
+    <div class="audience-card researcher">
+      <div class="audience-icon magenta">🔬</div>
+      <h3>Researchers & Faculty</h3>
+      <p style="color: var(--fg-1);">A research-grade platform with proper isolation and audit trails for publishable work.</p>
+      <ul>
+        <li>Authorized Ghost Mode with WireGuard/Tor netns + nftables kill-switch for legitimate red-team research</li>
+        <li>Real-time admin dashboard: see every student session, terminal, network flow, and AI rationale</li>
+        <li>Local-only AI engine: no student data leaves the lab, FERPA/DPDP compliant out of the box</li>
+        <li>Reproducible builds via live-build + Docker — same ISO every time, signed and checksummed</li>
+        <li>One-click PDF incident reports for academic-integrity proceedings</li>
+        <li>Pen-test report template ready for IRB / ethics committee review</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== stack ==================== -->
+<section id="stack">
+  <span class="section-eyebrow">Tech stack</span>
+  <h2 class="section-title">Built on <span class="accent">open</span> standards</h2>
+  <p class="section-lead">No proprietary lock-in. Everything runs locally, everything is auditable, every component is industry-standard.</p>
+  <div class="stack-marquee">
+    <span class="stack-pill">Kali Rolling</span>
+    <span class="stack-pill">Linux 6.6 LTS</span>
+    <span class="stack-pill">eBPF</span>
+    <span class="stack-pill">auditd</span>
+    <span class="stack-pill">cgroups v2</span>
+    <span class="stack-pill">SELinux</span>
+    <span class="stack-pill">AppArmor</span>
+    <span class="stack-pill">Firejail</span>
+    <span class="stack-pill">Python 3.11</span>
+    <span class="stack-pill">FastAPI</span>
+    <span class="stack-pill">React 18</span>
+    <span class="stack-pill">Vite</span>
+    <span class="stack-pill">TypeScript</span>
+    <span class="stack-pill">Go 1.22</span>
+    <span class="stack-pill">Ollama</span>
+    <span class="stack-pill">gemma3:4b</span>
+    <span class="stack-pill">scikit-learn</span>
+    <span class="stack-pill">Isolation Forest</span>
+    <span class="stack-pill">WireGuard</span>
+    <span class="stack-pill">Tor</span>
+    <span class="stack-pill">nftables</span>
+    <span class="stack-pill">FreeIPA</span>
+    <span class="stack-pill">SSSD</span>
+    <span class="stack-pill">live-build</span>
+    <span class="stack-pill">SquashFS</span>
+    <span class="stack-pill">XFCE 4</span>
+    <span class="stack-pill">caddy</span>
+    <span class="stack-pill">ttyd</span>
+    <span class="stack-pill">weasyprint</span>
+    <span class="stack-pill">lynis</span>
+    <span class="stack-pill">debsecan</span>
+    <span class="stack-pill">QEMU/KVM</span>
+  </div>
+</section>
+
+<!-- ==================== team ==================== -->
+<section id="team">
+  <span class="section-eyebrow">Team</span>
+  <h2 class="section-title">Designed at <span class="accent">VIT Bhopal</span></h2>
+  <p class="section-lead">Cybersecurity and Digital Forensics Lab, VIT Bhopal University.</p>
+
+  <div class="team-leadership">
+    <div class="leader">
+      <div class="leader-role">Project Director</div>
+      <div class="leader-name">Dr. Hemraj Shobharam Lamkuche</div>
+      <div class="leader-meta">Senior Assistant Professor · 100541</div>
+    </div>
+    <div class="leader">
+      <div class="leader-role">Chief Mentor</div>
+      <div class="leader-name">Dr. Pon Harshavardhanan</div>
+      <div class="leader-meta">Cybersecurity & Digital Forensics</div>
+    </div>
+    <div class="leader">
+      <div class="leader-role">Division Head</div>
+      <div class="leader-name">Dr. Saravanan D.</div>
+      <div class="leader-meta">Cybersecurity & Digital Forensics</div>
+    </div>
+  </div>
+
+  <h3 style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--fg-2); text-transform: uppercase; letter-spacing: 0.15em; margin-top: 3rem;">// Contributing team</h3>
+  <div class="team-grid">
+    <div class="team-member">Matrupriya Dibyanshu Panda</div>
+    <div class="team-member">Spandan Gope</div>
+    <div class="team-member">Bharat Raghuvanshi</div>
+    <div class="team-member">Mayank Singh Bhadouria</div>
+    <div class="team-member">Advait Sahu</div>
+    <div class="team-member">Aayushman Arora</div>
+    <div class="team-member">Harsh Singh</div>
+    <div class="team-member">Satyanarayana Murthy V</div>
+    <div class="team-member">Ravi Shankar</div>
+    <div class="team-member">Agnibha</div>
+    <div class="team-member">Leonardo</div>
+    <div class="team-member">Mannat Pal</div>
+    <div class="team-member">Ambika</div>
+    <div class="team-member">Rashmi</div>
+    <div class="team-member">Nahal</div>
+    <div class="team-member">Piyush</div>
+    <div class="team-member">Krishno</div>
+  </div>
+</section>
+
+<!-- ==================== contact ==================== -->
+<section id="contact">
+  <span class="section-eyebrow">Contact</span>
+  <h2 class="section-title">Get in <span class="accent">touch</span></h2>
+  <p class="section-lead">Questions about deployment, research collaboration, or pilot program? Reach the project director directly.</p>
+
+  <div class="contact-card">
+    <div class="contact-portrait">HSL</div>
+    <div class="contact-info">
+      <h3>Dr. Hemraj Shobharam Lamkuche</h3>
+      <div class="role">Project Director · Senior Assistant Professor</div>
+      <p style="color: var(--fg-1); margin: 0;">
+        Cybersecurity and Digital Forensics Lab<br>
+        VIT Bhopal University, Bhopal, Madhya Pradesh, India
+      </p>
+      <div class="contact-rows">
+        <div class="contact-row">
+          <span class="label">EMAIL ▸</span>
+          <a class="value" href="mailto:hemrajshobharamlamkuhce@vitbhopal.ac.in">hemrajshobharamlamkuhce@vitbhopal.ac.in</a>
+        </div>
+        <div class="contact-row">
+          <span class="label">PROJECT ▸</span>
+          <a class="value" href="mailto:vitbhopal.os@gmail.com">vitbhopal.os@gmail.com</a>
+        </div>
+        <div class="contact-row">
+          <span class="label">EMP_ID ▸</span>
+          <span class="value">100541</span>
+        </div>
+        <div class="contact-row">
+          <span class="label">SOURCE ▸</span>
+          <a class="value" href="https://github.com/crypto0010/VITOS" target="_blank" rel="noopener">github.com/crypto0010/VITOS</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== footer ==================== -->
+<footer>
+  <div class="footer-brand">VITOS</div>
+  <div>VIT Cybersecurity Lab Operating System · v1.0.0</div>
+  <div class="footer-credit">
+    Designed and developed at the<br>
+    <strong>Cybersecurity and Digital Forensics Lab</strong> · <strong>VIT Bhopal University</strong><br>
+    © 2026 — Released under the licenses of its component parts (Kali Linux, Debian, &amp; upstream tools)
+  </div>
+</footer>
+
+<!-- ==================== Three.js WebGL hero scene ==================== -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.163.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('webgl-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000);
+camera.position.z = 6;
+
+function getThemeColors() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  return {
+    bg: isDark ? new THREE.Color(0x04060f) : new THREE.Color(0xf5f7fa),
+    cyan: isDark ? new THREE.Color(0x00f5ff) : new THREE.Color(0x006d8c),
+    magenta: isDark ? new THREE.Color(0xff2bd6) : new THREE.Color(0xc2009e),
+    yellow: isDark ? new THREE.Color(0xf9e000) : new THREE.Color(0xb58900),
+    particle: isDark ? 0x9adfff : 0x4070a0,
+  };
+}
+
+let colors = getThemeColors();
+scene.fog = new THREE.Fog(colors.bg, 4, 18);
+
+// === central wireframe icosahedron ===
+const coreGeo = new THREE.IcosahedronGeometry(1.6, 1);
+const coreMat = new THREE.MeshBasicMaterial({
+  color: colors.cyan,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.6,
+});
+const core = new THREE.Mesh(coreGeo, coreMat);
+scene.add(core);
+
+// === inner solid icosahedron with gradient feel ===
+const innerGeo = new THREE.IcosahedronGeometry(1.0, 0);
+const innerMat = new THREE.MeshBasicMaterial({
+  color: colors.magenta,
+  wireframe: true,
+  transparent: true,
+  opacity: 0.3,
+});
+const inner = new THREE.Mesh(innerGeo, innerMat);
+scene.add(inner);
+
+// === particle field ===
+const PARTICLE_COUNT = 800;
+const positions = new Float32Array(PARTICLE_COUNT * 3);
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  const r = 4 + Math.random() * 5;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2 * Math.random() - 1);
+  positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+  positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+  positions[i * 3 + 2] = r * Math.cos(phi);
+}
+const particleGeo = new THREE.BufferGeometry();
+particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const particleMat = new THREE.PointsMaterial({
+  color: colors.particle,
+  size: 0.04,
+  sizeAttenuation: true,
+  transparent: true,
+  opacity: 0.8,
+});
+const particles = new THREE.Points(particleGeo, particleMat);
+scene.add(particles);
+
+// === orbit ring ===
+const ringGeo = new THREE.RingGeometry(2.5, 2.55, 64);
+const ringMat = new THREE.MeshBasicMaterial({
+  color: colors.yellow,
+  side: THREE.DoubleSide,
+  transparent: true,
+  opacity: 0.4,
+});
+const ring1 = new THREE.Mesh(ringGeo, ringMat);
+ring1.rotation.x = Math.PI / 3;
+scene.add(ring1);
+
+const ring2 = new THREE.Mesh(ringGeo, ringMat.clone());
+ring2.material.color = colors.cyan;
+ring2.material.opacity = 0.25;
+ring2.rotation.x = -Math.PI / 4;
+ring2.rotation.y = Math.PI / 6;
+scene.add(ring2);
+
+// === mouse parallax ===
+let mouseX = 0, mouseY = 0;
+window.addEventListener('mousemove', (e) => {
+  mouseX = (e.clientX / window.innerWidth - 0.5) * 0.6;
+  mouseY = (e.clientY / window.innerHeight - 0.5) * 0.6;
+}, { passive: true });
+
+// === resize ===
+function resize() {
+  const hero = document.querySelector('.hero');
+  const w = hero.clientWidth;
+  const h = hero.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// === animate ===
+const clock = new THREE.Clock();
+function animate() {
+  const t = clock.getElapsedTime();
+  core.rotation.x = t * 0.25;
+  core.rotation.y = t * 0.35;
+  inner.rotation.x = -t * 0.4;
+  inner.rotation.y = -t * 0.2;
+  particles.rotation.y = t * 0.05;
+  ring1.rotation.z = t * 0.15;
+  ring2.rotation.z = -t * 0.1;
+
+  // pulse
+  const pulse = 1 + Math.sin(t * 1.5) * 0.05;
+  core.scale.set(pulse, pulse, pulse);
+
+  // parallax
+  camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.05;
+  camera.position.y += (-mouseY * 0.6 - camera.position.y) * 0.05;
+  camera.lookAt(0, 0, 0);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+
+// === re-tint on theme change ===
+window.addEventListener('vitos:themechange', () => {
+  colors = getThemeColors();
+  scene.fog.color = colors.bg;
+  coreMat.color = colors.cyan;
+  innerMat.color = colors.magenta;
+  particleMat.color = new THREE.Color(colors.particle);
+  ring1.material.color = colors.yellow;
+  ring2.material.color = colors.cyan;
+});
+</script>
+
+<!-- ==================== theme + scroll fade ==================== -->
+<script>
+// theme persistence
+const html = document.documentElement;
+const savedTheme = localStorage.getItem('vitos-theme') || 'dark';
+html.dataset.theme = savedTheme;
+const updateThemeUI = () => {
+  const isDark = html.dataset.theme === 'dark';
+  document.getElementById('theme-icon').textContent = isDark ? '◐' : '◑';
+  document.getElementById('theme-label').textContent = isDark ? 'DARK' : 'LIGHT';
+};
+updateThemeUI();
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  html.dataset.theme = next;
+  localStorage.setItem('vitos-theme', next);
+  updateThemeUI();
+  window.dispatchEvent(new CustomEvent('vitos:themechange'));
+});
+
+// fade-in on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('section').forEach((s) => {
+  s.classList.add('fade-in');
+  observer.observe(s);
+});
+
+// smooth-scroll nav links
+document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const id = a.getAttribute('href');
+    const el = document.querySelector(id);
+    if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+</script>
+
+</body>
+</html>
