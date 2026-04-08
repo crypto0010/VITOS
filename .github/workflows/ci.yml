@@ -117,12 +117,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        if: matrix.pkg == 'vitos-dashboard'
+        with:
+          node-version: "20"
+
       - name: Install build tooling
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             debhelper devscripts dpkg-dev fakeroot lintian build-essential \
-            imagemagick fonts-dejavu-core nodejs npm
+            imagemagick fonts-dejavu-core
 
       - name: Generate branding artifacts (vitos-base prerequisite)
         if: matrix.pkg == 'vitos-base'

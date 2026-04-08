@@ -26,8 +26,14 @@ from pathlib import Path
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 
-DB_PATH = Path(os.environ.get("VITOS_SESSION_DB", "/var/lib/vitos/dashboard/sessions.db"))
+DEFAULT_DB_PATH = "/var/lib/vitos/dashboard/sessions.db"
 SESSION_TTL = timedelta(hours=8)
+
+
+def _db_path() -> Path:
+    """Resolved on every call so tests can monkeypatch VITOS_SESSION_DB."""
+    return Path(os.environ.get("VITOS_SESSION_DB", DEFAULT_DB_PATH))
+
 COOKIE_NAME = "vitos_sid"
 ADMIN_GROUP = "vitos-admins"
 
@@ -40,8 +46,9 @@ class LoginBody(BaseModel):
 
 
 def _conn() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    c = sqlite3.connect(DB_PATH)
+    p = _db_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    c = sqlite3.connect(p)
     c.execute(
         "CREATE TABLE IF NOT EXISTS sessions ("
         " sid TEXT PRIMARY KEY,"
