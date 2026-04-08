@@ -10,7 +10,8 @@ Architecture: all
 Depends: ${misc:Depends}, vitos-base, vitos-monitor,
  python3 (>= 3.11), python3-fastapi, python3-uvicorn, python3-jinja2,
  python3-pam, python3-aiofiles, python3-multipart,
- python3-websockets, python3-weasyprint, tmux, ttyd, caddy, openssl
+ python3-websockets, weasyprint, tmux, openssl
+Recommends: ttyd, caddy
 Description: VITOS web admin console (FastAPI + React)
  Replaces vitosctl with a browser-based admin dashboard. Tails the alert
  log via SSE, proxies live student terminals through ttyd, renders incident
