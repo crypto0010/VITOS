@@ -1,0 +1,14 @@
+[Unit]
+Description=VITOS Ghost Mode kill-switch watchdog (%i)
+After=network.target
+ConditionPathExists=/var/run/netns/%i
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/vitos/ghost/killswitch-watchdog.sh %i
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=no
+
+[Install]
+WantedBy=multi-user.target

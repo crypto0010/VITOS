@@ -1,0 +1,6 @@
+usr/lib/vitos/ghost/launch.sh                  usr/lib/vitos/ghost
+usr/lib/vitos/ghost/killswitch-watchdog.sh     usr/lib/vitos/ghost
+etc/vitos/ghost/torrc.template                 etc/vitos/ghost
+etc/nftables.d/vitos-ghost.nft                 etc/nftables.d
+etc/udev/rules.d/80-vitos-mac-randomize.rules  etc/udev/rules.d
+lib/systemd/system/vitos-ghost-killswitch@.service  lib/systemd/system

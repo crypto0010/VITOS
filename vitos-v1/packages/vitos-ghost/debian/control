@@ -1,0 +1,23 @@
+Source: vitos-ghost
+Section: admin
+Priority: optional
+Maintainer: VITOS Team <vitos@vit.example>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: vitos-ghost
+Architecture: all
+Depends: ${misc:Depends}, vitos-base, vitos-monitor,
+ wireguard, wireguard-tools, tor, torsocks,
+ nftables, iproute2, macchanger, dnscrypt-proxy,
+ jq, curl
+Description: VITOS Ghost Mode — WireGuard/Tor netns + nftables kill-switch
+ Authorized faculty / PhD researchers can opt into a network namespace
+ routed entirely through WireGuard or Tor with MAC randomization, hostname
+ spoofing, and a hard nftables kill-switch that drops all traffic if the
+ tunnel goes down. Activation requires dual-admin approval via
+ 'vitosctl ghost enable' / 'vitosctl ghost approve' — a member of the
+ vitos-admins group requests, a member of vitos-ghost-approvers approves,
+ and a single user cannot self-approve. All ghost-mode sessions are still
+ logged internally to /var/log/vitos/events.jsonl and alerts.jsonl —
+ Ghost Mode hides the *external* trace, not the academic-integrity audit.

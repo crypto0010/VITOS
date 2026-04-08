@@ -3,6 +3,7 @@ import os
 import pathlib
 import signal
 import subprocess
+import time
 from datetime import datetime, timedelta, timezone
 
 import click
@@ -123,6 +124,105 @@ def session_isolate(session_id, revert):
     else:
         subprocess.run(["ip", "link", "set", veth, "down"], check=False)
         click.echo(f"isolated {veth}")
+
+
+@cli.group()
+def ghost():
+    """Ghost Mode (SP6 / vitos-ghost) — dual-admin gated."""
+
+
+GHOST_PENDING = pathlib.Path("/var/lib/vitos/ghost/pending")
+GHOST_ACTIVE  = pathlib.Path("/var/lib/vitos/ghost/active")
+
+
+def _current_user() -> str:
+    return os.environ.get("SUDO_USER") or os.environ.get("USER") or "unknown"
+
+
+def _in_group(user: str, group: str) -> bool:
+    try:
+        import grp
+        return user in grp.getgrnam(group).gr_mem
+    except (KeyError, ImportError):
+        return False
+
+
+@ghost.command("enable")
+@click.argument("user")
+@click.option("--profile", default="default")
+def ghost_enable(user, profile):
+    """Request ghost mode for USER. Requires admin to be in vitos-admins."""
+    requester = _current_user()
+    if not _in_group(requester, "vitos-admins"):
+        click.echo(f"refused: {requester} is not in vitos-admins", err=True)
+        raise SystemExit(13)
+    GHOST_PENDING.mkdir(parents=True, exist_ok=True)
+    req_id = f"{user}.{profile}"
+    req_file = GHOST_PENDING / f"{req_id}.req"
+    payload = {
+        "id": req_id,
+        "user": user,
+        "profile": profile,
+        "requester": requester,
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    req_file.write_text(json.dumps(payload, indent=2))
+    click.echo(f"pending: {req_id} (request id {req_file})")
+    click.echo("waiting for a vitos-ghost-approvers member to run:")
+    click.echo(f"  vitosctl ghost approve {req_id}")
+
+
+@ghost.command("approve")
+@click.argument("req_id")
+def ghost_approve(req_id):
+    """Approve a pending ghost-mode request. Requires vitos-ghost-approvers."""
+    approver = _current_user()
+    if not _in_group(approver, "vitos-ghost-approvers"):
+        click.echo(f"refused: {approver} is not in vitos-ghost-approvers", err=True)
+        raise SystemExit(13)
+    req_file = GHOST_PENDING / f"{req_id}.req"
+    if not req_file.exists():
+        click.echo(f"no such pending request: {req_id}", err=True)
+        raise SystemExit(2)
+    req = json.loads(req_file.read_text())
+    if req["requester"] == approver:
+        click.echo(f"refused: {approver} cannot self-approve their own request", err=True)
+        raise SystemExit(13)
+    GHOST_ACTIVE.mkdir(parents=True, exist_ok=True)
+    active_file = GHOST_ACTIVE / f"{req['user']}.{req['profile']}"
+    req["approver"] = approver
+    req["approved_ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    active_file.write_text(json.dumps(req, indent=2))
+    req_file.unlink()
+    click.echo(f"approved: {req_id} (token {active_file})")
+
+
+@ghost.command("list")
+def ghost_list():
+    """List pending and active ghost-mode requests."""
+    click.echo("# pending")
+    if GHOST_PENDING.exists():
+        for f in sorted(GHOST_PENDING.glob("*.req")):
+            click.echo(f"  {f.stem}")
+    click.echo("# active")
+    if GHOST_ACTIVE.exists():
+        for f in sorted(GHOST_ACTIVE.iterdir()):
+            click.echo(f"  {f.name}")
+
+
+@ghost.command("disable")
+@click.argument("req_id")
+def ghost_disable(req_id):
+    """Revoke an active ghost-mode token."""
+    if not _in_group(_current_user(), "vitos-admins"):
+        raise SystemExit(13)
+    f = GHOST_ACTIVE / req_id
+    if f.exists():
+        f.unlink()
+        click.echo(f"revoked: {req_id}")
+    else:
+        click.echo(f"no such active token: {req_id}", err=True)
+        raise SystemExit(2)
 
 
 @cli.command()

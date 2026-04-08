@@ -69,6 +69,20 @@ case "$ACTION" in
     sleep 6
     [ -s /var/log/vitos/alerts.jsonl ] && say "alert_pipeline=PASS" || say "alert_pipeline=FAIL"
 
+    # SP6 Track 6A — Ghost Mode assertions
+    getent group vitos-ghost-approvers >/dev/null \
+      && say "ghost_approver_group=PASS" || say "ghost_approver_group=FAIL"
+    [ -d /var/lib/vitos/ghost/pending ] && [ -d /var/lib/vitos/ghost/active ] \
+      && say "ghost_state_dirs=PASS" || say "ghost_state_dirs=FAIL"
+    [ -x /usr/lib/vitos/ghost/launch.sh ] && [ -x /usr/lib/vitos/ghost/killswitch-watchdog.sh ] \
+      && say "ghost_scripts=PASS" || say "ghost_scripts=FAIL"
+    [ -f /etc/nftables.d/vitos-ghost.nft ] \
+      && say "ghost_killswitch_ruleset=PASS" || say "ghost_killswitch_ruleset=FAIL"
+    # default state must be: no active ghost netns
+    ip netns list 2>/dev/null | grep -q '^ghost-' && say "ghost_off_by_default=FAIL" || say "ghost_off_by_default=PASS"
+    # vitosctl ghost subcommand exists
+    vitosctl ghost --help >/dev/null 2>&1 && say "ghost_cli=PASS" || say "ghost_cli=FAIL"
+
     # SP5 dashboard assertions
     DASH_BASE=http://127.0.0.1:8443
     curl -sf "$DASH_BASE/api/health" 2>/dev/null | grep -q '"ok":true' \

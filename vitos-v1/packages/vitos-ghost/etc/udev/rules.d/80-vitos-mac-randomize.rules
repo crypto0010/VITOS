@@ -1,0 +1,5 @@
+# Randomize MAC on every interface at boot when vitos.ghost=1 is set
+# on the kernel cmdline. macchanger -r is a no-op if no permission.
+ACTION=="add", SUBSYSTEM=="net", KERNEL!="lo", \
+  ENV{ID_NET_NAME_PATH}=="?*", \
+  RUN+="/bin/sh -c 'grep -q vitos.ghost=1 /proc/cmdline && /usr/bin/macchanger -r %k || true'"

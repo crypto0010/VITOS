@@ -55,7 +55,9 @@ for marker in uname bpf group_students group_admins student_no_sudo \
               vitos-shell-tap vitos-udev-tap vitos-fanotify-tap \
               ollama vitos-ai vitos-dashboard ollama_model alert_pipeline \
               dashboard_health dashboard_index dashboard_auth_required \
-              dashboard_sse_gated; do
+              dashboard_sse_gated \
+              ghost_approver_group ghost_state_dirs ghost_scripts \
+              ghost_killswitch_ruleset ghost_off_by_default ghost_cli; do
   if grep -q "VITOS-SELFTEST: ${marker}=PASS" "$LOG"; then
     echo "  PASS: ${marker}"
   else

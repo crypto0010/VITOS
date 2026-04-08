@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    # Approver group — distinct from vitos-admins so that requesters and
+    # approvers are separable. A user MAY be in both, but the daemon
+    # refuses self-approval.
+    getent group vitos-ghost-approvers >/dev/null \
+      || groupadd --system vitos-ghost-approvers
+
+    # State directories
+    install -d -m 0750 /var/lib/vitos/ghost/pending
+    install -d -m 0750 /var/lib/vitos/ghost/active
+    install -d -m 0750 /etc/vitos/ghost/profiles
+    install -d -m 0755 /etc/wireguard
+    chown -R vitos-mon:vitos-mon /var/lib/vitos/ghost 2>/dev/null || true
+
+    chmod 0755 /usr/lib/vitos/ghost/launch.sh \
+               /usr/lib/vitos/ghost/killswitch-watchdog.sh
+
+    systemctl daemon-reload
+    ;;
+esac
+#DEBHELPER#
+exit 0

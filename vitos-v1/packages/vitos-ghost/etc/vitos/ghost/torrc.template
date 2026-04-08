@@ -1,0 +1,8 @@
+# /etc/vitos/ghost/torrc.template — copied into a profile by 'vitosctl ghost enable'
+SocksPort 127.0.0.1:9050
+DNSPort 127.0.0.1:9053
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .onion,.exit
+DataDirectory /var/lib/vitos/ghost/tor-${VITOS_PROFILE}
+RunAsDaemon 1
+Log notice file /var/log/vitos/ghost-tor-${VITOS_PROFILE}.log

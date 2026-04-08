@@ -3,6 +3,7 @@ vitos-base
 vitos-tools
 vitos-monitor
 vitos-dashboard
+vitos-ghost
 
 # Required so the custom kernel's postinst generates initrd.img-*
 initramfs-tools
