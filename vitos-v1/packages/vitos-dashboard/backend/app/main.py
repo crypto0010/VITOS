@@ -21,7 +21,15 @@ from . import ttyd_proxy as ttyd_mod
 START_TS = time.time()
 WEB_DIR = Path("/usr/share/vitos/dashboard/web")
 
+from . import events as events_mod
+
 app = FastAPI(title="VITOS Admin", version=__version__)
+
+
+@app.on_event("startup")
+async def _start_bus_subscriber() -> None:
+    events_mod.start_bus_task()
+
 
 # REST routers (each module exposes a router named `router`)
 app.include_router(auth_mod.router,    prefix="/api/auth",     tags=["auth"])
@@ -30,6 +38,7 @@ app.include_router(sessions_mod.router, prefix="/api/sessions", tags=["sessions"
 app.include_router(reports_mod.router,  prefix="/api/sessions", tags=["reports"])
 app.include_router(scopes_mod.router,   prefix="/api/scopes",   tags=["scopes"])
 app.include_router(alerts_mod.router,   prefix="/api/stream",   tags=["stream"])
+app.include_router(events_mod.router,   prefix="/api/events",   tags=["events"])
 app.include_router(audit_mod.router,    prefix="/api/audit",    tags=["audit"])
 app.include_router(ttyd_mod.router,     prefix="/api/term",     tags=["term"])
 

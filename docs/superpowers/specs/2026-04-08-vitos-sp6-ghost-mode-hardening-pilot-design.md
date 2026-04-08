@@ -148,15 +148,13 @@ say "vit_branding=PASS" if grep -q 'VIT Bhopal' /usr/share/vitos/branding/banner
 | Unattended installer sets a default LUKS passphrase | Preseed reads passphrase from a USB-key file (not baked into ISO). Documented loudly. |
 | Kali rolling drift between pilot ISO build and lab deploy | The shipped ISO is self-contained — debootstrap doesn't run at install time. Lab workstations boot the exact frozen ISO contents. |
 
-## 7. Open questions for the user (answer before plan-writing)
+## 7. Resolved configuration (answers from user, 2026-04-08)
 
-These need a one-line answer each before I can write the implementation plan:
-
-1. **Tor or i2p?** PDF says Tor. Confirming Tor + Tor Browser are the targets, and i2p is out of scope for SP6.
-2. **FreeIPA realm name** for VIT Bhopal? E.g. `LAB.VIT-BHOPAL.AC.IN`. If not known yet, we'll plumb a config placeholder.
-3. **Lab VLAN CIDR?** The Firejail profiles in v1 hardcoded `10.10.0.0/16` as a placeholder. SP6 should swap this for the real lab subnet.
-4. **Dual-admin approval implementation:** require two distinct `vitos-admins` group members, or a separate `vitos-ghost-approvers` group? Default: two distinct admins.
-5. **Lab exercise count** — I assumed 8 standard exercises (recon, exploit, forensics, malware, wireless, web, mobile, capstone). Confirm or substitute the real VIT Bhopal cybersec semester syllabus.
+1. **Anonymity backend:** Tor (+ Tor Browser). i2p out of scope.
+2. **FreeIPA realm:** `VITBHOPAL.LOCAL` (placeholder until a real IPA server is provisioned). Admin contact: `vitbhopal.os@gmail.com`. The realm string is configurable in `/etc/vitos/sso.toml`; rename when the production realm is decided.
+3. **Lab VLAN CIDR:** `10.10.0.0/16` (the v1 placeholder is the real value).
+4. **Dual-admin approval:** **separate `vitos-ghost-approvers` group**. Members of `vitos-admins` request, members of `vitos-ghost-approvers` approve. A user MAY be in both groups but cannot self-approve (the daemon refuses if `requester == approver`).
+5. **Lab exercise list confirmed:** `recon-101`, `exploit-201`, `forensics-301`, `malware-401`, `wireless-501`, `web-601`, `mobile-701`, `capstone-801` — exactly these 8 manifests ship in `vitos-vit-bhopal`.
 
 ## 8. Sub-project ordering inside SP6
 

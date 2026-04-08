@@ -45,6 +45,23 @@ jobs:
         working-directory: vitos-v1/packages/vitos-monitor/cli
         run: pytest -v
 
+  dashboard-tests:
+    name: vitos-dashboard backend tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dashboard test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi 'uvicorn[standard]' httpx pytest pydantic
+      - name: Run dashboard tests
+        working-directory: vitos-v1/packages/vitos-dashboard/backend
+        run: pytest -v
+
   go-tests:
     name: Go event bus tests
     runs-on: ubuntu-22.04

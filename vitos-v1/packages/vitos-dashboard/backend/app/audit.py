@@ -3,7 +3,9 @@ import json
 import time
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from .auth import current_admin
 
 AUDIT_LOG = Path("/var/log/vitos/dashboard-audit.jsonl")
 
@@ -24,7 +26,7 @@ def write(admin: str, action: str, target: str, result: str) -> None:
 
 
 @router.get("")
-def tail(limit: int = 100) -> list[dict]:
+def tail(limit: int = 100, _admin: str = Depends(current_admin)) -> list[dict]:
     if not AUDIT_LOG.exists():
         return []
     lines = AUDIT_LOG.read_text().splitlines()[-limit:]
