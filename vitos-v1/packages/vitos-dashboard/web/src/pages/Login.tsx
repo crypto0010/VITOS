@@ -16,9 +16,12 @@ export default function Login() {
   }
 
   return (
-    <form onSubmit={submit} style={{ maxWidth: 320 }}>
+    <form onSubmit={submit} style={{ maxWidth: 360 }}>
       <h2>Sign in</h2>
-      <p style={{ opacity: 0.6 }}>vitos-admins group only.</p>
+      <p style={{ opacity: 0.6, fontSize: "0.85rem" }}>
+        vitos-admins group only. Cybersecurity and Digital Forensics Lab,
+        VIT Bhopal University.
+      </p>
       <label>Username
         <input value={user} onChange={(e) => setUser(e.target.value)}
                style={{ display: "block", width: "100%", padding: "0.5rem", marginBottom: "1rem" }} />

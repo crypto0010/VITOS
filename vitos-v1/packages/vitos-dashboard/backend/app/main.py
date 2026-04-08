@@ -49,6 +49,9 @@ def health() -> dict:
         "ok": True,
         "version": __version__,
         "uptime": int(time.time() - START_TS),
+        "developed_by": "Cybersecurity and Digital Forensics Lab, VIT Bhopal University",
+        "project_director": "Dr. Hemraj Shobharam Lamkuche",
+        "contact": "vitbhopal.os@gmail.com",
     }
 
 

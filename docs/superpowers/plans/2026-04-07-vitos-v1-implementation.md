@@ -285,7 +285,7 @@ git commit -m "kernel: custom 6.6 LTS .config fragment + build script"
 Source: vitos-base
 Section: admin
 Priority: optional
-Maintainer: VITOS Team <vitos@vit.example>
+Maintainer: Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
@@ -315,7 +315,7 @@ vitos-base (1.0.0) unstable; urgency=medium
 
   * Initial release.
 
- -- VITOS Team <vitos@vit.example>  Tue, 07 Apr 2026 00:00:00 +0000
+ -- Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>  Tue, 07 Apr 2026 00:00:00 +0000
 ```
 
 - [ ] **Step 4: Write `debian/install`**
@@ -633,7 +633,7 @@ git commit -m "tools: vitos-run namespaced launcher with telemetry envelope"
 Source: vitos-tools
 Section: admin
 Priority: optional
-Maintainer: VITOS Team <vitos@vit.example>
+Maintainer: Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
@@ -662,7 +662,7 @@ Description: VITOS security toolchain wrapped in Firejail sandbox profiles
 ```text
 vitos-tools (1.0.0) unstable; urgency=medium
   * Initial release.
- -- VITOS Team <vitos@vit.example>  Tue, 07 Apr 2026 00:00:00 +0000
+ -- Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>  Tue, 07 Apr 2026 00:00:00 +0000
 ```
 
 - [ ] **Step 3: Write `debian/install`**
@@ -2173,7 +2173,7 @@ git commit -m "ai: Ollama intent classifier, composite RiskScorer, asyncio servi
 Source: vitos-monitor
 Section: admin
 Priority: optional
-Maintainer: VITOS Team <vitos@vit.example>
+Maintainer: Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
@@ -2200,7 +2200,7 @@ Description: VITOS telemetry collectors, AI behavioral engine, vitosctl
 ```text
 vitos-monitor (1.0.0) unstable; urgency=medium
   * Initial release.
- -- VITOS Team <vitos@vit.example>  Tue, 07 Apr 2026 00:00:00 +0000
+ -- Dr. Hemraj Shobharam Lamkuche <vitbhopal.os@gmail.com>  Tue, 07 Apr 2026 00:00:00 +0000
 ```
 
 - [ ] **Step 3: Write `debian/install`**
