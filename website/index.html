@@ -77,6 +77,88 @@ code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
   mix-blend-mode: overlay;
 }
 
+/* ==================== background animation canvas ==================== */
+#bg-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+[data-theme="light"] #bg-canvas { opacity: 0.35; }
+
+/* Page content sits above the background canvas */
+.nav, .hero, section, footer { position: relative; z-index: 2; }
+.hero { z-index: 1; }
+
+/* Subtle aurora gradient behind everything (behind the canvas too) */
+body::after {
+  content: "";
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(0, 245, 255, 0.09), transparent 70%),
+    radial-gradient(ellipse 50% 30% at 80% 30%, rgba(255, 43, 214, 0.07), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, rgba(249, 224, 0, 0.05), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: aurora 18s ease-in-out infinite alternate;
+}
+[data-theme="light"] body::after { opacity: 0.45; }
+@keyframes aurora {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(-2%, 1%); }
+  100% { transform: translate(2%, -1%); }
+}
+
+/* ==================== custom cursor ==================== */
+.cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  top: 0; left: 0;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+.cursor-dot {
+  width: 6px; height: 6px;
+  background: #00f5ff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.18s, height 0.18s, background 0.18s;
+}
+.cursor-ring {
+  width: 32px; height: 32px;
+  border: 1.5px solid #00f5ff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.25s ease, height 0.25s ease, border-color 0.25s, background 0.25s;
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+}
+.cursor.is-hover .cursor-dot {
+  width: 0; height: 0;
+}
+.cursor.is-hover .cursor-ring {
+  width: 50px; height: 50px;
+  background: rgba(255, 43, 214, 0.15);
+  border-color: #ff2bd6;
+  box-shadow: 0 0 28px rgba(255, 43, 214, 0.55);
+}
+.cursor.is-click .cursor-ring {
+  width: 22px; height: 22px;
+  background: rgba(0, 245, 255, 0.25);
+}
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none; }
+  body, a, button { cursor: auto !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor { display: none; }
+  body::after { animation: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  body, a, button, input, textarea, select { cursor: none; }
+}
+
 /* ==================== nav ==================== */
 .nav {
   position: fixed; top: 0; left: 0; right: 0;
@@ -705,6 +787,13 @@ footer .footer-credit {
 </head>
 <body>
 
+<!-- ==================== background animation ==================== -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<!-- ==================== custom cursor ==================== -->
+<div class="cursor cursor-dot" aria-hidden="true"></div>
+<div class="cursor cursor-ring" aria-hidden="true"></div>
+
 <!-- ==================== nav ==================== -->
 <nav class="nav">
   <div class="nav-brand">
@@ -1211,6 +1300,202 @@ document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
     if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
+</script>
+
+<!-- ==================== background canvas: cyber grid + drifting nodes + matrix rain ==================== -->
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) return;
+
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, dpr;
+
+  function getColors() {
+    const isDark = document.documentElement.dataset.theme === 'dark';
+    return isDark
+      ? { node: '#00f5ff', link: 'rgba(0,245,255,', rain: 'rgba(0,245,255,', accent: '#ff2bd6' }
+      : { node: '#006d8c', link: 'rgba(0,109,140,', rain: 'rgba(0,109,140,', accent: '#c2009e' };
+  }
+  let colors = getColors();
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // === drifting node network ===
+  const NODE_COUNT = Math.min(70, Math.floor((W * H) / 26000));
+  const nodes = Array.from({ length: NODE_COUNT }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    r: 0.8 + Math.random() * 1.4,
+  }));
+
+  // === matrix rain columns ===
+  const FONT_SIZE = 14;
+  const COL_W = FONT_SIZE;
+  const COL_COUNT = Math.ceil(W / COL_W);
+  const drops = Array.from({ length: COL_COUNT }, () => ({
+    y: Math.random() * H,
+    speed: 0.6 + Math.random() * 1.4,
+    char: '',
+    nextChar: 0,
+  }));
+  const GLYPHS = '0123456789ABCDEFアカサタナハマヤラワ░▒▓█/<>=#$&*';
+
+  // mouse-aware accent
+  let mx = W / 2, my = H / 2;
+  window.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
+
+  // === main loop ===
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(50, now - last);
+    last = now;
+    ctx.clearRect(0, 0, W, H);
+
+    // matrix rain — very subtle
+    ctx.font = `${FONT_SIZE}px "JetBrains Mono", monospace`;
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < COL_COUNT; i++) {
+      const d = drops[i];
+      d.y += d.speed * dt * 0.06;
+      if (d.y > H + FONT_SIZE) { d.y = -FONT_SIZE * 4; d.speed = 0.6 + Math.random() * 1.4; }
+      d.nextChar -= dt;
+      if (d.nextChar <= 0) {
+        d.char = GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+        d.nextChar = 80 + Math.random() * 200;
+      }
+      ctx.fillStyle = colors.rain + '0.18)';
+      ctx.fillText(d.char, i * COL_W, d.y);
+    }
+
+    // node network
+    for (const n of nodes) {
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = colors.node;
+      ctx.fill();
+    }
+
+    // links between nearby nodes
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 18000) {
+          const a = (1 - d2 / 18000) * 0.35;
+          ctx.strokeStyle = colors.link + a + ')';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // mouse halo line — link the cursor to the 3 nearest nodes
+    let near = nodes
+      .map((n) => ({ n, d2: (n.x - mx) ** 2 + (n.y - my) ** 2 }))
+      .sort((a, b) => a.d2 - b.d2)
+      .slice(0, 3);
+    for (const { n, d2 } of near) {
+      if (d2 > 60000) continue;
+      const a = (1 - d2 / 60000) * 0.6;
+      ctx.strokeStyle = colors.link + a + ')';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(mx, my);
+      ctx.lineTo(n.x, n.y);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  window.addEventListener('vitos:themechange', () => { colors = getColors(); });
+})();
+</script>
+
+<!-- ==================== custom cursor (dot + lagging ring) ==================== -->
+<script>
+(() => {
+  const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (isTouch || reduce) return;
+
+  const dot  = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
+  let rx = mx, ry = my;
+
+  window.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%, -50%)`;
+  }, { passive: true });
+
+  function ringFrame() {
+    rx += (mx - rx) * 0.18;
+    ry += (my - ry) * 0.18;
+    ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+    requestAnimationFrame(ringFrame);
+  }
+  requestAnimationFrame(ringFrame);
+
+  // Hover state on interactive elements
+  const HOVER_SELECTOR = 'a, button, .feature, .stack-pill, .leader, .team-member, .stat-card, .audience-card, .contact-row, input, textarea, select';
+  document.addEventListener('mouseover', (e) => {
+    if (e.target.closest(HOVER_SELECTOR)) {
+      dot.classList.add('is-hover');
+      ring.classList.add('is-hover');
+    }
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (e.target.closest(HOVER_SELECTOR)) {
+      dot.classList.remove('is-hover');
+      ring.classList.remove('is-hover');
+    }
+  });
+
+  // Click pulse
+  document.addEventListener('mousedown', () => {
+    dot.classList.add('is-click');
+    ring.classList.add('is-click');
+  });
+  document.addEventListener('mouseup', () => {
+    dot.classList.remove('is-click');
+    ring.classList.remove('is-click');
+  });
+
+  // Hide when mouse leaves window
+  document.addEventListener('mouseleave', () => {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  });
+  document.addEventListener('mouseenter', () => {
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+})();
 </script>
 
 </body>
