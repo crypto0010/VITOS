@@ -1329,20 +1329,52 @@ footer .footer-credit {
     </div>
   </div>
 
-  <!-- live-fetched SHA-256 hashes from the latest release -->
+  <!-- SHA-256 hashes — baked in for v1.0.1, live-refreshed on page load -->
   <div class="verify-card">
     <h3>🔐 SHA-256 verification hashes</h3>
     <div class="verify-meta">
-      Auto-fetched from <code>github.com/crypto0010/VITOS/releases/latest</code>
-      <span class="release-tag" id="release-tag-pill">…</span>
+      Published on <code>github.com/crypto0010/VITOS/releases</code>
+      <span class="release-tag" id="release-tag-pill">v1.0.1</span>
     </div>
     <p style="font-size: 0.88rem; color: var(--fg-1); margin: 0.5rem 0 0.75rem;">
       Compare these against the output of <code>sha256sum vitos-v1-amd64.part00.iso</code>
-      after each download. They are pulled live from the published GitHub Release —
-      no manual editing — so they always match the asset you'll actually download.
+      after each download. They are baked into this page for v1.0.1 and also
+      live-refreshed from the GitHub Releases API on every visit, so if a newer
+      release is published the table will update automatically.
     </p>
     <div id="hash-table-mount">
-      <div class="hash-loading">Fetching hashes from the GitHub Release API…</div>
+      <table class="hash-table"><tbody>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.iso">vitos-v1-20260408-amd64.iso</td>
+          <td class="hash" id="h0">617cd3812c6b055126b9f5a38a0efb97d3a377d523b5a8d56036f63eb4dbc159</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h0" data-hash="617cd3812c6b055126b9f5a38a0efb97d3a377d523b5a8d56036f63eb4dbc159">COPY</button></td>
+        </tr>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.part00.iso">vitos-v1-20260408-amd64.part00.iso</td>
+          <td class="hash" id="h1">a68c72c352caeec8b62205af4ffa1c9c0f4a934ad9faa6661c5c8f947e8f7c5e</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h1" data-hash="a68c72c352caeec8b62205af4ffa1c9c0f4a934ad9faa6661c5c8f947e8f7c5e">COPY</button></td>
+        </tr>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.part01.iso">vitos-v1-20260408-amd64.part01.iso</td>
+          <td class="hash" id="h2">794cde82b5c69fecef81188ef8e85fc82d4ff7add116f7b005da1f9ead99882f</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h2" data-hash="794cde82b5c69fecef81188ef8e85fc82d4ff7add116f7b005da1f9ead99882f">COPY</button></td>
+        </tr>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.part02.iso">vitos-v1-20260408-amd64.part02.iso</td>
+          <td class="hash" id="h3">6d19da9b356231bb1eda022306da0132051b77b63d56fdefe43ecc7cf8186bac</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h3" data-hash="6d19da9b356231bb1eda022306da0132051b77b63d56fdefe43ecc7cf8186bac">COPY</button></td>
+        </tr>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.part03.iso">vitos-v1-20260408-amd64.part03.iso</td>
+          <td class="hash" id="h4">285bb70136ab6aeb13d86c17f26fe5b9e9f47cf12e955065ed0bd5f41af4dd90</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h4" data-hash="285bb70136ab6aeb13d86c17f26fe5b9e9f47cf12e955065ed0bd5f41af4dd90">COPY</button></td>
+        </tr>
+        <tr>
+          <td class="fname" title="vitos-v1-20260408-amd64.part04.iso">vitos-v1-20260408-amd64.part04.iso</td>
+          <td class="hash" id="h5">a389a4a9dd0950b6b829ee54a7585c346d504fe883d3201a0c45cecc90077467</td>
+          <td class="copy"><button type="button" class="copy-btn" data-target="h5" data-hash="a389a4a9dd0950b6b829ee54a7585c346d504fe883d3201a0c45cecc90077467">COPY</button></td>
+        </tr>
+      </tbody></table>
     </div>
   </div>
 </section>
@@ -1763,8 +1795,15 @@ document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
         </tr>`;
     }).join('');
     mount.innerHTML = `<table class="hash-table"><tbody>${rows}</tbody></table>`;
+    wireCopyButtons();
+  }
 
+  // Attach clipboard handlers — delegated so it works for both the
+  // baked-in static rows and any freshly-rendered rows from the API.
+  function wireCopyButtons() {
     mount.querySelectorAll('.copy-btn').forEach((btn) => {
+      if (btn.dataset.wired === '1') return;
+      btn.dataset.wired = '1';
       btn.addEventListener('click', async () => {
         try {
           await navigator.clipboard.writeText(btn.dataset.hash);
@@ -1778,6 +1817,7 @@ document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
       });
     });
   }
+  wireCopyButtons();  // activate the baked-in rows immediately
 
   if (cached) { render(cached.tag, cached.lines); return; }
 
