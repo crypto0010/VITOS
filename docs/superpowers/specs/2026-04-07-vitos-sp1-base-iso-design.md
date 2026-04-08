@@ -1,8 +1,10 @@
 # VITOS v1 — Integrated Build (Base + Tools + AI Monitoring)
 
 **Date:** 2026-04-07
-**Status:** Draft for review (revision 2 — scope expanded per user direction)
+**Status:** SHIPPED 2026-04-08 (revision 3 — base swapped from Debian to Kali rolling after 14 CI runs of dependency hell)
 **Scope:** Collapses original SP1 (base) + SP2 (sandbox & tools) + SP3 (telemetry) + SP4 (AI engine) into a single shippable v1. SP5 (admin dashboard) and SP6 (ghost mode + pilot hardening) remain separate sub-projects.
+
+**Released ISO:** https://github.com/crypto0010/VITOS/releases/tag/v0.0.0-20260407-182918 (5 parts × ~1.9 GB, 8.5 GB total)
 **Parent spec:** `main.pdf` (VITOS — academic security distro for VIT cybersecurity labs)
 
 ---
@@ -37,9 +39,9 @@ After v1 ships, the only things still missing from the PDF vision are the **web 
    - **`vitos-monitor`** — telemetry collectors + AI engine + Ollama + `vitosctl`.
 4. A pre-baked **Ollama model blob** (`gemma3:4b-instruct-q4_K_M`, ~3.0 GB) shipped inside the ISO at `/var/lib/ollama/models/` so first boot has zero network dependency.
 5. Reproducible Docker builder image; three idempotent build scripts (`build-kernel.sh`, `build-iso.sh`, `smoke-test.sh`).
-6. **ISO size target: 4.5–5 GB** (Ollama model dominates; XFCE + tools ≈ 1.8 GB; kernel + base ≈ 0.4 GB).
+6. **ISO size (actual): ~8.5 GB.** Original target was 3–5 GB; Kali rolling pulls in a much larger XFCE + tool footprint than Bookworm would have. GitHub Releases cap assets at 2 GB per file, so the published ISO is split into 5 parts with `cat` reassembly (see `REASSEMBLE.md` in the release).
 7. **Idle RAM target: ≤ 2 GB** with Ollama loaded; ≤ 1 GB if `ollama serve` is stopped. CLI-only target available for low-RAM lab boxes.
-8. **Disk install minimum: 16 GB** (model + tools + room for student work).
+8. **Disk install minimum: 20 GB** (Kali rolling base + tools + model + room for student work).
 
 ## 4. Architecture
 
@@ -93,8 +95,9 @@ After v1 ships, the only things still missing from the PDF vision are the **web 
 
 ### 4.1 Base distribution
 
-- **Debian 12 Bookworm**, `main` + `contrib` + `non-free-firmware` (firmware needed for lab Wi-Fi/NIC support).
-- Built with **`live-build` 1:20230502** from a Bookworm builder container. No third-party repos in SP1.
+- **Kali Linux rolling** (`kali-rolling`), `main` + `contrib` + `non-free` + `non-free-firmware`.
+- **Why not Debian?** This spec originally said "Debian 12 Bookworm minimal". Three CI iterations proved that incompatible: every Kali-rolling tool we needed (metasploit-framework, ghidra, radare2, ettercap, …) was rebuilt against Trixie's libraries (glibc 2.38+, libstdc++ 13+, openjdk-21, ruby 3.3+, t64 ABI). Debian 12's glibc 2.36 / libstdc++ 12 / openjdk-17 / ruby 3.1 base could not satisfy them, no apt-pinning combination resolved cleanly, and even Debian 13 Trixie hit Kali-versioned transitive deps (`libaio1t64+kali1`). Switching the base from `debian` to `kali-rolling` eliminated the entire conflict class on the next run. The decision is recorded in the commit history (`BREAKING: switch base to Kali rolling`, commit `04828af`).
+- Built with **`live-build` from `kalilinux/kali-rolling`** (`--mode kali`). Builder image is the official Kali rolling Docker image with debhelper, gcc-12, golang, qemu, and imagemagick added.
 
 ### 4.2 Desktop
 

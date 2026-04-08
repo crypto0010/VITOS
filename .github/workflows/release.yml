@@ -162,13 +162,13 @@ jobs:
       # ---- smoke test -----------------------------------------------------
       - name: Run QEMU smoke test (TCG soft-emulation)
         if: github.event.inputs.run_smoke_test != 'false'
+        continue-on-error: true
         run: |
-          # No /dev/kvm on free runners — drop --enable-kvm via wrapper
-          docker run --rm -v "$PWD:/build" vitos-builder:latest -c "
-            sed -i 's/-enable-kvm //' /build/vitos-v1/tests/smoke-test.sh &&
-            chmod +x /build/vitos-v1/tests/smoke-test.sh &&
-            /build/vitos-v1/tests/smoke-test.sh /build/vitos-v1/vitos-v1-*.iso
-          " || echo "Smoke test failed (continuing — review logs)"
+          # smoke-test.sh now auto-detects /dev/kvm and direct-boots the
+          # extracted kernel + initrd so the in-guest selftest can run.
+          docker run --rm -v "$PWD:/build" vitos-builder:latest -c \
+            'chmod +x /build/vitos-v1/tests/smoke-test.sh && \
+             /build/vitos-v1/tests/smoke-test.sh /build/vitos-v1/vitos-v1-*.iso'
 
       # ---- publish --------------------------------------------------------
       - name: Compute release tag
