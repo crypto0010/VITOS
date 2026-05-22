@@ -31,8 +31,6 @@ for opt in CONFIG_BPF_SYSCALL CONFIG_USER_NS CONFIG_AUDIT CONFIG_FANOTIFY CONFIG
   grep -q "^${opt}=y" .config || { echo "MISSING: $opt"; exit 1; }
 done
 
-echo "-vitos" > localversion-vitos
-
 make -j"$(nproc)" CC=gcc-12 HOSTCC=gcc-12 bindeb-pkg \
      LOCALVERSION=-vitos KDEB_PKGVERSION="${KVER}-vitos1"
 
