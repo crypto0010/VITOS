@@ -1,6 +1,7 @@
 """Session control — shells out to vitosctl, all actions auth-gated and audited."""
 from __future__ import annotations
 
+import re
 import subprocess
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -8,6 +9,13 @@ from .auth import current_admin
 from .audit import write as audit_write
 
 router = APIRouter()
+
+_SESSION_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def _validate_session_id(session_id: str) -> None:
+    if not _SESSION_RE.match(session_id):
+        raise HTTPException(status_code=400, detail="invalid session id")
 
 
 def _vitosctl(*args: str) -> str:
@@ -26,6 +34,7 @@ def list_sessions(_admin: str = Depends(current_admin)) -> list[str]:
 
 @router.post("/{session_id}/freeze")
 def freeze(session_id: str, admin: str = Depends(current_admin)) -> dict:
+    _validate_session_id(session_id)
     out = _vitosctl("session", "freeze", session_id)
     audit_write(admin, "freeze", session_id, "ok")
     return {"out": out}
@@ -33,6 +42,7 @@ def freeze(session_id: str, admin: str = Depends(current_admin)) -> dict:
 
 @router.post("/{session_id}/isolate")
 def isolate(session_id: str, admin: str = Depends(current_admin)) -> dict:
+    _validate_session_id(session_id)
     out = _vitosctl("session", "isolate", session_id)
     audit_write(admin, "isolate", session_id, "ok")
     return {"out": out}
@@ -40,6 +50,7 @@ def isolate(session_id: str, admin: str = Depends(current_admin)) -> dict:
 
 @router.post("/{session_id}/release")
 def release(session_id: str, admin: str = Depends(current_admin)) -> dict:
+    _validate_session_id(session_id)
     out = _vitosctl("session", "isolate", session_id, "--revert")
     audit_write(admin, "release", session_id, "ok")
     return {"out": out}

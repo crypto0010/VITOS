@@ -69,7 +69,7 @@ def start_bus_task(loop: asyncio.AbstractEventLoop | None = None) -> None:
     """Idempotent — call from FastAPI startup."""
     global _task
     if _task is None or _task.done():
-        loop = loop or asyncio.get_event_loop()
+        loop = loop or asyncio.get_running_loop()
         _task = loop.create_task(_bus_loop())
 
 
@@ -83,15 +83,6 @@ def get_recent(student_id: str, limit: int = 100) -> list[dict]:
 @router.get("")
 def list_buffered_students(_admin: str = Depends(current_admin)) -> list[str]:
     return sorted(_rings.keys())
-
-
-@router.get("/{student_id}")
-def student_events(
-    student_id: str,
-    limit: int = Query(100, ge=1, le=RING_SIZE),
-    _admin: str = Depends(current_admin),
-) -> list[dict]:
-    return get_recent(student_id, limit)
 
 
 @router.get("/stream")
@@ -117,3 +108,12 @@ async def stream_events(
                     _subscribers[student].remove(q)
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@router.get("/{student_id}")
+def student_events(
+    student_id: str,
+    limit: int = Query(100, ge=1, le=RING_SIZE),
+    _admin: str = Depends(current_admin),
+) -> list[dict]:
+    return get_recent(student_id, limit)

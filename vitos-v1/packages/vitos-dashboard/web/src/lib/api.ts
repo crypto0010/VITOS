@@ -42,8 +42,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const listStudents   = () => api<Student[]>("/api/students");
 export const listSessions   = () => api<string[]>("/api/sessions");
-export const freezeSession  = (id: string) => api(`/api/sessions/${id}/freeze`,  { method: "POST" });
-export const isolateSession = (id: string) => api(`/api/sessions/${id}/isolate`, { method: "POST" });
-export const releaseSession = (id: string) => api(`/api/sessions/${id}/release`, { method: "POST" });
+export const freezeSession  = (id: string) => api(`/api/sessions/${encodeURIComponent(id)}/freeze`,  { method: "POST" });
+export const isolateSession = (id: string) => api(`/api/sessions/${encodeURIComponent(id)}/isolate`, { method: "POST" });
+export const releaseSession = (id: string) => api(`/api/sessions/${encodeURIComponent(id)}/release`, { method: "POST" });
 export const listScopes     = () => api<string[]>("/api/scopes");
 export const tailAudit      = () => api<Array<Record<string, unknown>>>("/api/audit");

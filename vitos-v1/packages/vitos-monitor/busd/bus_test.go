@@ -19,11 +19,19 @@ func TestBusFanout(t *testing.T) {
 	b := NewBus(sock, logPath, 1024*1024)
 	go b.Run()
 	defer b.Stop()
-	time.Sleep(100 * time.Millisecond)
 
-	sub, err := net.Dial("unix", sock+".sub")
-	if err != nil {
-		t.Fatal(err)
+	var sub net.Conn
+	var err error
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		sub, err = net.Dial("unix", sock+".sub")
+		if err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for sub socket: %v", err)
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 	defer sub.Close()
 
@@ -40,7 +48,10 @@ func TestBusFanout(t *testing.T) {
 		r := bufio.NewReader(sub)
 		line, _ := r.ReadString('\n')
 		var ev map[string]any
-		json.Unmarshal([]byte(line), &ev)
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			t.Errorf("unmarshal: %v", err)
+			return
+		}
 		if ev["type"] != "test" {
 			t.Errorf("got %v", ev["type"])
 		}

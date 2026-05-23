@@ -4,8 +4,8 @@
 # Spawns a network namespace ghost-<uid>, moves a veth pair into it,
 # brings WireGuard up inside the netns, starts torsocks/Tor SOCKS,
 # applies the nftables kill-switch, and exec's the user's shell inside
-# the namespace. All ghost-mode events are still emitted on the
-# vitos-busd UNIX socket via a bind mount of /run/vitos.
+# the namespace. The busd socket at /run/vitos is accessible because
+# ip-netns-exec only changes the network namespace, not the mount namespace.
 set -euo pipefail
 
 USER="${1:?usage: launch.sh <user> <profile>}"
@@ -28,9 +28,11 @@ VETH_GUEST="vg-${UID_NUM}"
 if ! ip link show "$VETH_HOST" >/dev/null 2>&1; then
   ip link add "$VETH_HOST" type veth peer name "$VETH_GUEST"
   ip link set "$VETH_GUEST" netns "$NS"
-  ip addr add 10.200.${UID_NUM}.1/24 dev "$VETH_HOST"
+  OCTET3=$(( UID_NUM % 256 ))
+  OCTET2=$(( (UID_NUM / 256) % 256 ))
+  ip addr add 10.$((200 + OCTET2)).${OCTET3}.1/24 dev "$VETH_HOST"
   ip link set "$VETH_HOST" up
-  ip netns exec "$NS" ip addr add 10.200.${UID_NUM}.2/24 dev "$VETH_GUEST"
+  ip netns exec "$NS" ip addr add 10.$((200 + OCTET2)).${OCTET3}.2/24 dev "$VETH_GUEST"
   ip netns exec "$NS" ip link set "$VETH_GUEST" up
   ip netns exec "$NS" ip link set lo up
 fi
@@ -42,7 +44,8 @@ fi
 
 # Tor inside the netns (lazy — only if profile requests it)
 if [ -f "${PROFILE_DIR}/tor.conf" ]; then
-  ip netns exec "$NS" tor -f "${PROFILE_DIR}/tor.conf" --runasdaemon 1
+  VITOS_PROFILE="$PROFILE" envsubst < "${PROFILE_DIR}/tor.conf" > "/tmp/torrc-${NS}"
+  ip netns exec "$NS" tor -f "/tmp/torrc-${NS}" --runasdaemon 1
 fi
 
 # nftables kill-switch — drops all traffic except lo + wg + tor
@@ -50,10 +53,6 @@ ip netns exec "$NS" nft -f /etc/nftables.d/vitos-ghost.nft
 
 # MAC randomization on the guest veth
 ip netns exec "$NS" macchanger -r "$VETH_GUEST" || true
-
-# Bind-mount /run/vitos so the busd socket is reachable from inside the ns
-mkdir -p "/var/run/netns/${NS}/run"
-mount --bind /run/vitos "/var/run/netns/${NS}/run/vitos" 2>/dev/null || true
 
 # Hand off to the user
 exec sudo -u "$USER" ip netns exec "$NS" \

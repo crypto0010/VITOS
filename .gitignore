@@ -11,6 +11,11 @@ vitos-v1/packages/*/debian/vitos-*/
 vitos-v1/*.iso
 vitos-v1/*.iso.zsync
 
+# Node / frontend
+node_modules/
+dist/
+package-lock.json
+
 # Python
 __pycache__/
 *.pyc

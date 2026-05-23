@@ -2,7 +2,10 @@
 set -e
 
 # Install Ollama binary into the chroot
-curl -fsSL https://ollama.com/install.sh | sed 's/systemctl start/true #/' | sh
+OLLAMA_VER="0.6.2"
+curl -fL --retry 3 -o /usr/local/bin/ollama \
+  "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VER}/ollama-linux-amd64"
+chmod 755 /usr/local/bin/ollama
 
 getent group ollama  >/dev/null || groupadd --system ollama
 getent passwd ollama >/dev/null || \

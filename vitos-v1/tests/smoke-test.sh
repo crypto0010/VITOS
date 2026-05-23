@@ -5,7 +5,7 @@ ISO="${1:-$(ls -1t /build/vitos-v1/vitos-v1-*.iso | head -1)}"
 [ -f "$ISO" ] || { echo "ISO not found"; exit 1; }
 
 WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"; [ -f "$WORK/qemu.pid" ] && kill "$(cat "$WORK/qemu.pid")" 2>/dev/null || true' EXIT
+trap '[ -f "$WORK/qemu.pid" ] && kill "$(cat "$WORK/qemu.pid")" 2>/dev/null || true; rm -rf "$WORK"' EXIT
 qcow="$WORK/disk.qcow2"
 qemu-img create -f qcow2 "$qcow" 20G
 
@@ -24,10 +24,10 @@ xorriso -osirrox on -indev "$ISO" \
       -extract /live/initrd.img-vitos "$WORK/extract/initrd.img"
   }
 
-KVM_FLAG=""
-[ -e /dev/kvm ] && KVM_FLAG="-enable-kvm"
+KVM_FLAG=()
+[ -e /dev/kvm ] && KVM_FLAG=(-enable-kvm)
 
-qemu-system-x86_64 $KVM_FLAG -m 6144 -smp 4 \
+qemu-system-x86_64 "${KVM_FLAG[@]}" -m 6144 -smp 4 \
   -kernel "$WORK/extract/vmlinuz" \
   -initrd "$WORK/extract/initrd.img" \
   -append "boot=live components quiet vitos.consent=preaccepted vitos.selftest=1 console=ttyS0 findiso=/$(basename "$ISO")" \

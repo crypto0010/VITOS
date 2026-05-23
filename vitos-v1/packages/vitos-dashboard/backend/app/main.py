@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -63,5 +63,9 @@ if WEB_DIR.exists():
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa_fallback(path: str) -> FileResponse:
-        # Any non-/api/ route returns index.html for client-side routing.
-        return FileResponse(WEB_DIR / "index.html")
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="not found")
+        index = WEB_DIR / "index.html"
+        if not index.exists():
+            raise HTTPException(status_code=404, detail="frontend not built")
+        return FileResponse(index)

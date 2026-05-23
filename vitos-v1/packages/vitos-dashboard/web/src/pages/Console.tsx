@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listStudents, freezeSession, isolateSession, releaseSession } from "../lib/api";
 import type { Student } from "../lib/api";
 import StudentList from "../components/StudentList";
@@ -11,22 +11,24 @@ export default function Console() {
   const [err, setErr] = useState<string | null>(null);
   const [writable, setWritable] = useState(false);
 
-  async function refresh() {
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+
+  const refresh = useCallback(async () => {
     try {
       const list = await listStudents();
       setStudents(list);
-      if (!selected && list.length > 0) setSelected(list[0].id);
+      if (!selectedRef.current && list.length > 0) setSelected(list[0].id);
     } catch (e) {
       setErr(String(e));
     }
-  }
+  }, []);
 
   useEffect(() => {
     refresh();
     const t = setInterval(refresh, 5000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refresh]);
 
   async function action(fn: (id: string) => Promise<unknown>, label: string) {
     if (!selected) return;
@@ -60,7 +62,7 @@ export default function Console() {
             <button onClick={() => action(isolateSession, "Isolate")} disabled={!selected} style={btnStyle("#e94560")}>Isolate</button>
             <button onClick={() => action(releaseSession, "Release")} disabled={!selected} style={btnStyle("#16c79a")}>Release</button>
             {selected && (
-              <a href={`/api/sessions/${selected}/report.pdf`} target="_blank" rel="noopener noreferrer" style={{ ...btnStyle("#7dd3fc"), textDecoration: "none" }}>
+              <a href={`/api/sessions/${encodeURIComponent(selected)}/report.pdf`} target="_blank" rel="noopener noreferrer" style={{ ...btnStyle("#7dd3fc"), textDecoration: "none" }}>
                 Report
               </a>
             )}

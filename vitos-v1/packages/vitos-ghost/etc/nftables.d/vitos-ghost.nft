@@ -19,6 +19,8 @@ table inet vitos_ghost {
     type filter hook output priority 0; policy drop;
     oif lo accept
     oifname "wg0" accept
+    # WireGuard UDP handshake/keepalive on the underlying veth
+    udp dport 51820 accept
     # Allow connecting to the local Tor SOCKS / dnscrypt only
     ip daddr 127.0.0.1 tcp dport { 9050, 9053 } accept
     ip daddr 127.0.0.1 udp dport 53 accept

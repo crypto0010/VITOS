@@ -7,6 +7,7 @@ export function useSSE<T>(url: string | null) {
 
   useEffect(() => {
     if (!url) return;
+    setItems([]);
     let cancelled = false;
     let retry = 1000;
     let es: EventSource | null = null;
@@ -37,6 +38,7 @@ export function useSSE<T>(url: string | null) {
     return () => {
       cancelled = true;
       es?.close();
+      ref.current = null;
     };
   }, [url]);
 

@@ -88,16 +88,21 @@ jobs:
       # (Kali archive key no longer needed — base is now Kali rolling and
       #  the kali-archive-keyring package is bootstrapped automatically.)
 
+      - name: Compile Go binaries for vitos-monitor
+        run: |
+          docker run --rm -v "$PWD:/build" vitos-builder:latest -c "
+            mkdir -p /build/vitos-v1/packages/vitos-monitor/build
+            cd /build/vitos-v1/packages/vitos-monitor/busd &&
+            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-busd .
+            cd /build/vitos-v1/packages/vitos-monitor/bpf &&
+            go generate ./... 2>/dev/null || true &&
+            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-bpf-exec -tags exec . &&
+            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-bpf-net  -tags net  .
+          "
+
       - name: Build vitos-* .debs
         run: |
           for pkg in vitos-base vitos-tools vitos-monitor vitos-dashboard vitos-ghost vitos-sso vitos-hardening vitos-vit-bhopal; do
-            if [ "$pkg" = "vitos-monitor" ]; then
-              mkdir -p vitos-v1/packages/vitos-monitor/build
-              touch vitos-v1/packages/vitos-monitor/build/vitos-busd \
-                    vitos-v1/packages/vitos-monitor/build/vitos-bpf-exec \
-                    vitos-v1/packages/vitos-monitor/build/vitos-bpf-net
-              chmod +x vitos-v1/packages/vitos-monitor/build/*
-            fi
             docker run --rm -v "$PWD:/build" vitos-builder:latest -c "
               cd /build/vitos-v1/packages/$pkg &&
               dpkg-buildpackage -us -uc -b &&
@@ -130,7 +135,8 @@ jobs:
       - name: Split ISO into 1.9 GB parts
         run: |
           cd vitos-v1
-          ISO=$(ls vitos-v1-*-amd64.iso | head -1)
+          ISO=""; for f in vitos-v1-*-amd64.iso; do [ -f "$f" ] && ISO="$f" && break; done
+          [ -n "$ISO" ] || { echo "no ISO found"; exit 1; }
           BASE="${ISO%.iso}"
           split -b 1900M -d -a 2 --additional-suffix=.iso "$ISO" "${BASE}.part"
           ls -lh "${BASE}".part*.iso

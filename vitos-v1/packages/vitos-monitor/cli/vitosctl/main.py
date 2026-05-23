@@ -18,13 +18,22 @@ console = Console()
 
 def _parse_since(s: str) -> datetime:
     now = datetime.now(timezone.utc)
-    if s.endswith("h"):
-        return now - timedelta(hours=int(s[:-1]))
-    if s.endswith("m"):
-        return now - timedelta(minutes=int(s[:-1]))
-    if s.endswith("d"):
-        return now - timedelta(days=int(s[:-1]))
-    return datetime.fromisoformat(s)
+    try:
+        if s.endswith("h"):
+            return now - timedelta(hours=int(s[:-1]))
+        if s.endswith("m"):
+            return now - timedelta(minutes=int(s[:-1]))
+        if s.endswith("d"):
+            return now - timedelta(days=int(s[:-1]))
+        return datetime.fromisoformat(s)
+    except (ValueError, OverflowError) as e:
+        raise click.BadParameter(f"invalid --since value: {s!r} ({e})") from e
+
+
+def _sanitize_session_id(session_id: str) -> str:
+    if "/" in session_id or "\\" in session_id or ".." in session_id:
+        raise click.BadParameter(f"invalid session_id: {session_id}")
+    return session_id
 
 
 @click.group()
@@ -103,6 +112,7 @@ def session_list():
 @click.argument("session_id")
 def session_freeze(session_id):
     """Send SIGSTOP to a session's namespace PID 1 (resumable)."""
+    session_id = _sanitize_session_id(session_id)
     pid_f = pathlib.Path(f"/run/vitos/sessions/{session_id}/pid")
     if not pid_f.exists():
         click.echo("session not found")
@@ -117,6 +127,7 @@ def session_freeze(session_id):
 @click.option("--revert", is_flag=True)
 def session_isolate(session_id, revert):
     """Drop or restore a session's network namespace veth."""
+    session_id = _sanitize_session_id(session_id)
     veth = f"vitos-{session_id[:8]}"
     if revert:
         subprocess.run(["ip", "link", "set", veth, "up"], check=False)
@@ -157,6 +168,10 @@ def ghost_enable(user, profile):
         click.echo(f"refused: {requester} is not in vitos-admins", err=True)
         raise SystemExit(13)
     GHOST_PENDING.mkdir(parents=True, exist_ok=True)
+    if "/" in user or "\\" in user or ".." in user:
+        raise click.BadParameter(f"invalid user: {user}")
+    if "/" in profile or "\\" in profile or ".." in profile:
+        raise click.BadParameter(f"invalid profile: {profile}")
     req_id = f"{user}.{profile}"
     req_file = GHOST_PENDING / f"{req_id}.req"
     payload = {
@@ -180,6 +195,8 @@ def ghost_approve(req_id):
     if not _in_group(approver, "vitos-ghost-approvers"):
         click.echo(f"refused: {approver} is not in vitos-ghost-approvers", err=True)
         raise SystemExit(13)
+    if "/" in req_id or "\\" in req_id or ".." in req_id:
+        raise click.BadParameter(f"invalid req_id: {req_id}")
     req_file = GHOST_PENDING / f"{req_id}.req"
     if not req_file.exists():
         click.echo(f"no such pending request: {req_id}", err=True)

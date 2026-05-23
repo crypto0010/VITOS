@@ -7,7 +7,7 @@ OUT=/var/log/vitos/hardening/$(date +%Y-%m-%d)
 mkdir -p "$OUT"
 
 echo "== debsecan ==" | tee "$OUT/cve.txt"
-debsecan --suite kali-rolling --format detail >> "$OUT/cve.txt" 2>&1 || true
+debsecan --suite sid --format detail >> "$OUT/cve.txt" 2>&1 || true
 
 echo "== lynis ==" | tee "$OUT/lynis.txt"
 lynis audit system --quick --no-colors --profile /etc/lynis/profiles/vitos.prf \

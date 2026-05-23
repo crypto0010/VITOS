@@ -16,11 +16,13 @@ lb clean --purge || true
 ./auto/config
 lb build 2>&1 | tee /tmp/lb-build.log
 
-ISO=$(ls -1 *.iso 2>/dev/null | head -1)
+ISO=""; for f in *.iso; do [ -f "$f" ] && ISO="$f" && break; done
 if [ -z "$ISO" ]; then
   echo "BUILD FAILED — no ISO produced"
   exit 1
 fi
 SIZE=$(du -h "$ISO" | cut -f1)
-mv "$ISO" "/build/vitos-v1/vitos-v1-$(date +%Y%m%d)-amd64.iso"
-echo "Built /build/vitos-v1/vitos-v1-$(date +%Y%m%d)-amd64.iso ($SIZE)"
+STAMP="$(date +%Y%m%d)"
+FINAL="/build/vitos-v1/vitos-v1-${STAMP}-amd64.iso"
+mv "$ISO" "$FINAL"
+echo "Built ${FINAL} ($SIZE)"

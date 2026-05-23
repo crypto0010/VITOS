@@ -3,6 +3,7 @@ import json
 import os
 import pathlib
 import socket
+import subprocess
 import time
 from typing import Any
 
@@ -20,9 +21,15 @@ DEFAULT_ALERT_LOG = "/var/log/vitos/alerts.jsonl"
 
 def load_scope(path: str) -> dict[str, Any]:
     p = pathlib.Path(path)
+    default = {"allowed_targets": [], "allowed_ports": [], "allowed_tools": []}
     if not p.exists():
-        return {"allowed_targets": [], "allowed_ports": [], "allowed_tools": []}
-    return yaml.safe_load(p.read_text())
+        return default
+    loaded = yaml.safe_load(p.read_text())
+    if not isinstance(loaded, dict):
+        return default
+    for key in default:
+        loaded.setdefault(key, [])
+    return loaded
 
 
 def is_scope_breach(ev: dict, scope: dict) -> bool:
@@ -32,15 +39,23 @@ def is_scope_breach(ev: dict, scope: dict) -> bool:
             return True
     if ev.get("type") == "net_flow":
         port = ev.get("dport")
-        if port is not None and scope["allowed_ports"] and port not in scope["allowed_ports"]:
-            return True
+        if port is not None and scope["allowed_ports"]:
+            port_int = int(port)
+            allowed = {int(p) for p in scope["allowed_ports"]}
+            if port_int not in allowed:
+                return True
     return False
 
 
 def isolate(student_id: str, session_id: str) -> None:
     """Best-effort namespace network drop via vitosctl."""
     try:
-        os.system(f"vitosctl session isolate {session_id} >/dev/null 2>&1")
+        subprocess.run(
+            ["vitosctl", "session", "isolate", session_id],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
     except Exception:
         pass
 
@@ -57,66 +72,72 @@ async def run(bus_path: str, alert_log: str, scope_path: str,
     out = open(alert_log, "a", buffering=1)
 
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    while True:
-        try:
-            sock.connect(bus_path)
-            break
-        except OSError:
-            await asyncio.sleep(1)
-    sock.setblocking(False)
-    loop = asyncio.get_running_loop()
-
-    last_score: dict[tuple[str, str], float] = {}
-    buf = b""
-    while True:
-        chunk = await loop.sock_recv(sock, 65536)
-        if not chunk:
-            break
-        buf += chunk
-        while b"\n" in buf:
-            line, buf = buf.split(b"\n", 1)
+    try:
+        while True:
             try:
-                ev = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            sid = ev.get("student_id")
-            sess = ev.get("session_id")
-            if not sid or not sess:
-                continue
-            fx.ingest(ev)
-            feats = fx.snapshot(sid, sess)
+                sock.connect(bus_path)
+                break
+            except OSError:
+                await asyncio.sleep(1)
+        sock.setblocking(False)
+        loop = asyncio.get_running_loop()
 
-            anomaly = 0.0 if lite else am.score(sid, feats, is_baseline=False)
+        last_score: dict[tuple[str, str], float] = {}
+        buf = b""
+        while True:
+            chunk = await loop.sock_recv(sock, 65536)
+            if not chunk:
+                break
+            buf += chunk
+            while b"\n" in buf:
+                line, buf = buf.split(b"\n", 1)
+                try:
+                    ev = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                sid = ev.get("student_id")
+                sess = ev.get("session_id")
+                if not sid or not sess:
+                    continue
+                fx.ingest(ev)
+                feats = fx.snapshot(sid, sess)
 
-            label, conf, reason = (IntentLabel.UNKNOWN, 0.0, "")
-            if not lite and ev.get("type") in ("shell_cmd", "tool_exec"):
-                cmd = ev.get("cmd") or " ".join(ev.get("argv", []))
-                if cmd:
-                    label, conf, reason = ic.classify(cmd)
+                anomaly = 0.0 if lite else am.score(sid, feats, is_baseline=False)
 
-            breach = is_scope_breach(ev, scope)
-            cat, score = sc.score(anomaly, label, conf, breach)
+                label, conf, reason = (IntentLabel.UNKNOWN, 0.0, "")
+                if not lite and ev.get("type") in ("shell_cmd", "tool_exec"):
+                    cmd = ev.get("cmd") or " ".join(ev.get("argv", []))
+                    if cmd:
+                        label, conf, reason = await loop.run_in_executor(
+                            None, ic.classify, cmd
+                        )
 
-            key = (sid, sess)
-            if score < 20 and last_score.get(key, 100) < 20:
-                continue
-            last_score[key] = score
+                breach = is_scope_breach(ev, scope)
+                cat, score = sc.score(anomaly, label, conf, breach)
 
-            if cat != AlertCategory.NORMAL:
-                alert = {
-                    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                    "student_id": sid, "session_id": sess,
-                    "category": cat.value, "score": score,
-                    "anomaly": round(anomaly, 3),
-                    "intent_label": label.value,
-                    "intent_confidence": round(conf, 3),
-                    "scope_breach": breach,
-                    "ai_reason": reason,
-                    "trigger_event": ev,
-                }
-                out.write(json.dumps(alert) + "\n")
-                if cat == AlertCategory.CRITICAL:
-                    isolate(sid, sess)
+                key = (sid, sess)
+                if score < 20 and last_score.get(key, 100) < 20:
+                    continue
+                last_score[key] = score
+
+                if cat != AlertCategory.NORMAL:
+                    alert = {
+                        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        "student_id": sid, "session_id": sess,
+                        "category": cat.value, "score": score,
+                        "anomaly": round(anomaly, 3),
+                        "intent_label": label.value,
+                        "intent_confidence": round(conf, 3),
+                        "scope_breach": breach,
+                        "ai_reason": reason,
+                        "trigger_event": ev,
+                    }
+                    out.write(json.dumps(alert) + "\n")
+                    if cat == AlertCategory.CRITICAL:
+                        isolate(sid, sess)
+    finally:
+        sock.close()
+        out.close()
 
 
 @click.command()

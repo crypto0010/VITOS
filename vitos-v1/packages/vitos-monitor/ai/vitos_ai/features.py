@@ -47,7 +47,8 @@ class FeatureExtractor:
                 if ev.get("comm") == "sudo":
                     f["sudo_tries"] += 1
             elif t == "net_flow":
-                f["bytes_out"] += int(ev.get("bytes", 0))
+                f["bytes_out"] += int(ev.get("bytes_out", ev.get("bytes", 0)))
+                f["bytes_in"] += int(ev.get("bytes_in", 0))
                 if ev.get("daddr"):
                     dst_ips.add(ev["daddr"])
                 if ev.get("dport") is not None:

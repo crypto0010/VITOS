@@ -30,10 +30,12 @@ PURGE=$(awk '/^\[purge_defaults\]/{p=1} p && $1=="enabled"{print $3; exit}' "$CF
 
 logger -t vitos-sso "joining IPA realm $REALM via $SERVER"
 
+IPA_PW="$(cat "$PWFILE")"
 ipa-client-install --unattended \
   --realm="$REALM" --domain="$DOMAIN" --server="$SERVER" \
-  --principal="$ADMIN" --password="$(cat "$PWFILE")" \
+  --principal="$ADMIN" --password="$IPA_PW" \
   --mkhomedir --no-ntp --force-join
+unset IPA_PW
 
 # Wipe the password file on success
 shred -u "$PWFILE" 2>/dev/null || rm -f "$PWFILE"

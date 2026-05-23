@@ -9,10 +9,15 @@ export default function Login() {
     e.preventDefault();
     const r = await fetch("/api/auth/login", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user, pw }),
     });
-    setMsg(`HTTP ${r.status}`);
+    if (r.ok) {
+      window.location.href = "/";
+    } else {
+      setMsg(`Login failed (HTTP ${r.status})`);
+    }
   }
 
   return (
