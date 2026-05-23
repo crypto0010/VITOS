@@ -90,15 +90,25 @@ jobs:
 
       - name: Compile Go binaries for vitos-monitor
         run: |
-          docker run --rm -v "$PWD:/build" vitos-builder:latest -c "
-            mkdir -p /build/vitos-v1/packages/vitos-monitor/build
-            cd /build/vitos-v1/packages/vitos-monitor/busd &&
-            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-busd .
-            cd /build/vitos-v1/packages/vitos-monitor/bpf &&
-            go generate ./... 2>/dev/null || true &&
-            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-bpf-exec -tags exec . &&
-            CGO_ENABLED=0 go build -o /build/vitos-v1/packages/vitos-monitor/build/vitos-bpf-net  -tags net  .
-          "
+          docker run --rm -v "$PWD:/build" vitos-builder:latest -c '
+            set -e
+            OUTDIR=/build/vitos-v1/packages/vitos-monitor/build
+            mkdir -p "$OUTDIR"
+
+            # busd — pure Go, no cgo
+            cd /build/vitos-v1/packages/vitos-monitor/busd
+            go mod tidy
+            CGO_ENABLED=0 go build -buildvcs=false -o "$OUTDIR/vitos-busd" .
+
+            # bpf loader — needs bpf2go codegen then build
+            cd /build/vitos-v1/packages/vitos-monitor/bpf
+            go mod tidy
+            go install github.com/cilium/ebpf/cmd/bpf2go@v0.13.2
+            export PATH="$PATH:$(go env GOPATH)/bin"
+            go generate ./...
+            CGO_ENABLED=0 go build -buildvcs=false -o "$OUTDIR/vitos-bpf-exec" .
+            cp "$OUTDIR/vitos-bpf-exec" "$OUTDIR/vitos-bpf-net"
+          '
 
       - name: Build vitos-* .debs
         run: |
