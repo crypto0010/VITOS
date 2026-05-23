@@ -119,11 +119,7 @@ jobs:
             if [ "$BPF_OK" = "0" ]; then
               echo "vmlinux.h unavailable — installing BPF stub wrappers"
               for bin in vitos-bpf-exec vitos-bpf-net; do
-                cat > "$OUTDIR/$bin" <<STUB
-            #!/bin/sh
-            echo "vitos-bpf: recompile with /usr/lib/vitos/rebuild-bpf.sh on target kernel" >&2
-            exit 1
-            STUB
+                printf "#!/bin/sh\necho \"vitos-bpf: recompile on target kernel\" >&2\nexit 1\n" > "$OUTDIR/$bin"
                 chmod +x "$OUTDIR/$bin"
               done
             fi
