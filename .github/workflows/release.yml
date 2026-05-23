@@ -98,7 +98,7 @@ jobs:
             # busd — pure Go, no cgo
             cd /build/vitos-v1/packages/vitos-monitor/busd
             go mod tidy
-            CGO_ENABLED=0 go build -buildvcs=false -o "$OUTDIR/vitos-busd" .
+            CGO_ENABLED=0 go build -buildvcs=false -ldflags="-s -w" -o "$OUTDIR/vitos-busd" .
 
             # bpf loader — requires vmlinux.h generated from running kernel BTF.
             # Try to build; fall back to wrapper scripts if BTF is unavailable
