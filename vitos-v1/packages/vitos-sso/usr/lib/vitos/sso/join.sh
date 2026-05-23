@@ -8,6 +8,7 @@ set -euo pipefail
 CFG=/etc/vitos/sso.toml
 PWFILE=/etc/vitos/sso.password
 [ -f "$CFG" ] || { echo "no $CFG — refusing join"; exit 0; }
+command -v ipa-client-install >/dev/null 2>&1 || { echo "vitos-sso: freeipa-client not installed — skipping join"; exit 0; }
 
 # Tiny TOML reader (handles flat key = "value" lines under [ipa])
 toml_get() {

@@ -7,8 +7,8 @@ Standards-Version: 4.6.2
 
 Package: vitos-sso
 Architecture: all
-Depends: ${misc:Depends}, vitos-base, vitos-monitor,
- freeipa-client, sssd, sssd-ipa, libpam-sss, libnss-sss,
+Depends: ${misc:Depends}, vitos-base, vitos-monitor
+Recommends: freeipa-client, sssd, sssd-ipa, libpam-sss, libnss-sss,
  oddjob-mkhomedir
 Description: VITOS FreeIPA / LDAP single sign-on
  Joins the lab workstation to a FreeIPA realm and chains pam_sss into
