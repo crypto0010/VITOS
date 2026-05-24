@@ -5,7 +5,7 @@ distro for the VIT Bhopal cybersecurity lab with AI-powered behavioral
 monitoring, Firejail-sandboxed pentesting tools, eBPF/auditd telemetry, a
 FastAPI+React admin dashboard, WireGuard/Tor Ghost Mode, and FreeIPA SSO.
 
-**Latest release:** [VITOS v1.0.0](https://github.com/crypto0010/VITOS/releases/tag/v1.0.0)
+**Latest release:** [VITOS v1.0.2](https://github.com/crypto0010/VITOS/releases/latest)
 (5 split parts, ~8.5 GB total; see `REASSEMBLE.md` on the release page)
 
 ---
