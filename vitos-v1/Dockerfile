@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     live-build live-boot live-config live-config-doc \
     debootstrap squashfs-tools xorriso isolinux syslinux-common \
     grub-pc-bin grub-efi-amd64-bin mtools dosfstools \
-    git curl ca-certificates jq xz-utils \
+    git curl ca-certificates jq xz-utils zstd \
     clang llvm libbpf-dev linux-headers-amd64 \
     python3 python3-venv python3-pip \
     qemu-system-x86 qemu-utils ovmf \

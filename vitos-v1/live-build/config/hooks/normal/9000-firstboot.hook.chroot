@@ -2,10 +2,13 @@
 set -e
 
 # Install Ollama binary into the chroot
-OLLAMA_VER="0.6.2"
-curl -fL --retry 3 -o /usr/local/bin/ollama \
-  "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VER}/ollama-linux-amd64"
-chmod 755 /usr/local/bin/ollama
+OLLAMA_VER="0.24.0"
+apt-get install -y --no-install-recommends zstd >/dev/null 2>&1 || true
+curl -fL --retry 3 -o /tmp/ollama.tar.zst \
+  "https://github.com/ollama/ollama/releases/download/v${OLLAMA_VER}/ollama-linux-amd64.tar.zst"
+tar --zstd -xf /tmp/ollama.tar.zst -C /usr --strip-components=0
+rm -f /tmp/ollama.tar.zst
+chmod 755 /usr/bin/ollama
 
 getent group ollama  >/dev/null || groupadd --system ollama
 getent passwd ollama >/dev/null || \
