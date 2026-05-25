@@ -7,8 +7,9 @@ OUT_BASE="$(dirname "$0")/../packages/vitos-base/usr/share/vitos/branding"
 OUT_PLY="$(dirname "$0")/../packages/vitos-base/usr/share/plymouth/themes/vitos"
 OUT_ISOLINUX="$(dirname "$0")/../live-build/config/bootloaders/isolinux"
 OUT_GRUB="$(dirname "$0")/../live-build/config/bootloaders/grub-pc"
+OUT_GRUB_EFI="$(dirname "$0")/../live-build/config/bootloaders/grub-efi"
 
-mkdir -p "$OUT_BASE" "$OUT_PLY" "$OUT_ISOLINUX" "$OUT_GRUB"
+mkdir -p "$OUT_BASE" "$OUT_PLY" "$OUT_ISOLINUX" "$OUT_GRUB" "$OUT_GRUB_EFI"
 
 BG="#0a0e2a"
 FG="#ffffff"
@@ -39,8 +40,14 @@ convert -size 640x480 xc:"$BG" \
   -colors 16 -depth 8 \
   "$OUT_ISOLINUX/splash.png"
 
-# 4. GRUB EFI splash
-cp "$OUT_PLY/splash.png" "$OUT_GRUB/splash.png"
+# 4. GRUB BIOS + EFI splash — 1024x768 for broad compatibility
+convert -size 1024x768 xc:"$BG" \
+  \( "$SRC" -resize 320x -background none -gravity center -extent 320x \) \
+  -gravity center -composite \
+  -gravity south -fill "$FG" -font DejaVu-Sans-Bold -pointsize 24 \
+  -annotate +0+80 'VITOS — VIT Bhopal Cybersecurity Lab' \
+  "$OUT_GRUB/splash.png"
+cp "$OUT_GRUB/splash.png" "$OUT_GRUB_EFI/splash.png"
 
 # 5. ASCII header
 cat > "$OUT_BASE/banner-ascii.txt" <<'ASCII'
@@ -54,4 +61,4 @@ cat > "$OUT_BASE/banner-ascii.txt" <<'ASCII'
 ASCII
 
 echo "Branding artifacts written:"
-ls -1 "$OUT_BASE" "$OUT_PLY" "$OUT_ISOLINUX" "$OUT_GRUB"
+ls -1 "$OUT_BASE" "$OUT_PLY" "$OUT_ISOLINUX" "$OUT_GRUB" "$OUT_GRUB_EFI"
