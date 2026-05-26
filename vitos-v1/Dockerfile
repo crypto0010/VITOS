@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-12 g++-12 \
     debhelper devscripts dpkg-dev fakeroot lintian \
     live-build live-boot live-config live-config-doc \
-    debootstrap squashfs-tools xorriso isolinux syslinux-common \
+    debootstrap mmdebstrap squashfs-tools xorriso isolinux syslinux-common \
     grub-pc-bin grub-efi-amd64-bin mtools dosfstools \
     git curl ca-certificates jq xz-utils zstd \
     clang llvm libbpf-dev linux-headers-amd64 \

@@ -14,7 +14,33 @@ fi
 
 lb clean --purge || true
 ./auto/config
-lb build 2>&1 | tee /tmp/lb-build.log
+
+# Try normal build — if debootstrap fails on a transient mirror issue
+# (e.g. GCC package transition), fall back to mmdebstrap which uses
+# APT's full resolver and can select older consistent packages.
+if lb build 2>&1 | tee /tmp/lb-build.log; then
+  echo "=== lb build succeeded ==="
+else
+  if grep -q "Couldn't download packages" /tmp/lb-build.log; then
+    echo "=== Debootstrap mirror issue — retrying with mmdebstrap ==="
+    rm -rf chroot .build/bootstrap*
+
+    mmdebstrap \
+      --variant=minbase \
+      --include=apt,kali-archive-keyring \
+      --aptopt='Acquire::Retries "3";' \
+      kali-rolling chroot http://http.kali.org/kali
+
+    mkdir -p .build
+    touch .build/bootstrap
+
+    lb build 2>&1 | tee /tmp/lb-build-retry.log
+  else
+    echo "=== Build failed (not a mirror issue) ==="
+    tail -100 /tmp/lb-build.log
+    exit 1
+  fi
+fi
 
 ISO=""; for f in *.iso; do [ -f "$f" ] && ISO="$f" && break; done
 if [ -z "$ISO" ]; then
