@@ -24,22 +24,42 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     break
   fi
 
-  # Identify failure type from the log
-  if grep -q "Couldn't download packages" /tmp/lb-build.log; then
-    echo "=== Debootstrap package download failure — retrying with mmdebstrap ==="
+  if grep -qE "Couldn't download packages|404.*Not Found.*gcc|404.*Not Found.*libgcc" /tmp/lb-build.log; then
+    echo "=== Kali mirror has broken packages (404) — bootstrapping from Debian sid ==="
     rm -rf chroot .build/bootstrap*
 
+    # Bootstrap from Debian sid which has consistent packages
     mmdebstrap \
       --variant=minbase \
-      --include=apt,kali-archive-keyring \
+      --include=apt,gnupg \
       --aptopt='Acquire::Retries "5";' \
-      kali-rolling chroot http://http.kali.org/kali
+      sid chroot http://deb.debian.org/debian
 
+    # Switch the chroot to Kali repos
+    cat > chroot/etc/apt/sources.list <<'SOURCES'
+deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
+SOURCES
+
+    # Trust Kali archive key
+    cp /usr/share/keyrings/kali-archive-keyring.gpg \
+       chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
+
+    # Upgrade chroot to Kali packages
+    mount --bind /proc chroot/proc
+    mount --bind /sys  chroot/sys
+    mount --bind /dev  chroot/dev
+    chroot chroot apt-get update -y
+    chroot chroot apt-get dist-upgrade -y --allow-downgrades || true
+    umount chroot/dev chroot/sys chroot/proc
+
+    # Mark bootstrap complete for live-build
     mkdir -p .build
     touch .build/bootstrap
+
+    # Retry — lb build will skip bootstrap and proceed to chroot + binary
     continue
 
-  elif grep -q "Mirror sync in progress\|unexpected size\|Hash Sum mismatch\|index files failed" /tmp/lb-build.log; then
+  elif grep -qE "Mirror sync in progress|unexpected size|Hash Sum mismatch|index files failed" /tmp/lb-build.log; then
     echo "=== Mirror sync in progress — waiting 90s before retry ==="
     sleep 90
     lb clean --chroot || true
