@@ -13,6 +13,7 @@ lb config noauto \
   --mirror-chroot http://http.kali.org/kali \
   --mirror-binary http://http.kali.org/kali \
   --keyring-packages kali-archive-keyring \
+  --apt-source-archives false \
   --security false \
   --updates false \
   --backports false \

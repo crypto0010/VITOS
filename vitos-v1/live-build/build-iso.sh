@@ -17,7 +17,7 @@ lb clean --purge || true
 
 GCC_PIN='Package: gcc-16-base\nPin: version *\nPin-Priority: -1\n\nPackage: gcc-14-base libgcc-s1 libstdc++6\nPin: release a=testing\nPin-Priority: 999'
 
-MAX_RETRIES=4
+MAX_RETRIES=6
 for attempt in $(seq 1 $MAX_RETRIES); do
   echo "=== Build attempt $attempt of $MAX_RETRIES ==="
 
@@ -58,8 +58,8 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     continue
 
   elif grep -qE "Mirror sync in progress|unexpected size|Hash Sum mismatch|index files failed" /tmp/lb-build.log; then
-    echo "=== Mirror sync in progress — waiting 90s before retry (keeping chroot intact) ==="
-    sleep 90
+    echo "=== Mirror sync in progress — waiting 180s before retry (keeping chroot intact) ==="
+    sleep 180
     # Do NOT clean the chroot — it's fine, only the mirror is flaky.
     # Just remove chroot stage markers so lb retries the chroot config.
     rm -f .build/chroot_archives .build/chroot_apt
