@@ -15,7 +15,9 @@ fi
 lb clean --purge || true
 ./auto/config
 
-MAX_RETRIES=3
+GCC_PIN='Package: gcc-16-base\nPin: version *\nPin-Priority: -1\n\nPackage: gcc-14-base libgcc-s1 libstdc++6\nPin: release a=testing\nPin-Priority: 999'
+
+MAX_RETRIES=4
 for attempt in $(seq 1 $MAX_RETRIES); do
   echo "=== Build attempt $attempt of $MAX_RETRIES ==="
 
@@ -28,11 +30,6 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     echo "=== Kali mirror has broken GCC 16 packages — using mmdebstrap with Debian testing fallback ==="
     rm -rf chroot .build/bootstrap* .build/chroot*
 
-    # Bootstrap from Kali, but add Debian testing as a supplementary
-    # source for GCC packages. Pin GCC 16 to -1 so APT picks GCC 14
-    # from Debian testing instead of the broken Kali packages.
-    GCC_PIN='Package: gcc-16-base\nPin: version *\nPin-Priority: -1\n\nPackage: gcc-14-base libgcc-s1 libstdc++6\nPin: release a=testing\nPin-Priority: 999'
-
     mmdebstrap \
       --variant=minbase \
       --include=apt,gnupg,kali-archive-keyring \
@@ -43,26 +40,29 @@ for attempt in $(seq 1 $MAX_RETRIES); do
       --setup-hook="mkdir -p \"\$1/etc/apt/preferences.d\" && printf '$GCC_PIN\n' > \"\$1/etc/apt/preferences.d/gcc-pin\"" \
       kali-rolling chroot http://http.kali.org/kali
 
-    # Mark bootstrap complete — lb build will skip straight to chroot stage
-    mkdir -p .build
-    touch .build/bootstrap
-
-    # Ensure the GCC pin and Kali keyring persist into the chroot for lb
-    mkdir -p chroot/etc/apt/preferences.d chroot/etc/apt/trusted.gpg.d
+    # Persist GCC pin and Kali keyring into chroot for lb's chroot stage
+    mkdir -p chroot/etc/apt/preferences.d chroot/etc/apt/trusted.gpg.d chroot/etc/apt/apt.conf.d
+    printf "$GCC_PIN\n" > chroot/etc/apt/preferences.d/gcc-pin
     cp /usr/share/keyrings/kali-archive-keyring.gpg \
        chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
-    printf "$GCC_PIN\n" > chroot/etc/apt/preferences.d/gcc-pin
+    printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' \
+       > chroot/etc/apt/apt.conf.d/99retries
 
-    # Remove the Debian testing source — lb will set up Kali sources
+    # Remove Debian testing source — lb will set up its own Kali sources
     rm -f chroot/etc/apt/sources.list.d/debian-testing.list
+
+    # Mark bootstrap complete
+    mkdir -p .build
+    touch .build/bootstrap
 
     continue
 
   elif grep -qE "Mirror sync in progress|unexpected size|Hash Sum mismatch|index files failed" /tmp/lb-build.log; then
-    echo "=== Mirror sync in progress — waiting 90s before retry ==="
+    echo "=== Mirror sync in progress — waiting 90s before retry (keeping chroot intact) ==="
     sleep 90
-    lb clean --chroot || true
-    rm -rf .build/chroot*
+    # Do NOT clean the chroot — it's fine, only the mirror is flaky.
+    # Just remove chroot stage markers so lb retries the chroot config.
+    rm -f .build/chroot_archives .build/chroot_apt
     continue
 
   else
@@ -72,8 +72,6 @@ for attempt in $(seq 1 $MAX_RETRIES); do
       exit 1
     fi
     sleep 30
-    lb clean --chroot || true
-    rm -rf .build/chroot*
   fi
 done
 
