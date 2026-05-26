@@ -20,7 +20,7 @@ lb config noauto \
   --bootloaders "syslinux,grub-efi" \
   --linux-flavours "6.6.52-vitos" \
   --linux-packages linux-image \
-  --debian-installer false \
+  --debian-installer live \
   --memtest none \
   --iso-application "VITOS" \
   --iso-volume "VITOS-V1" \
