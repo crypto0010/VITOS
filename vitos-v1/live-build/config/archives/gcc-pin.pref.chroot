@@ -1,0 +1,7 @@
+Package: gcc-16-base
+Pin: version *
+Pin-Priority: -1
+
+Package: libgcc-s1 libstdc++6
+Pin: version 16*
+Pin-Priority: -1

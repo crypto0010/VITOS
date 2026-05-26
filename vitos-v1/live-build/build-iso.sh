@@ -24,39 +24,30 @@ for attempt in $(seq 1 $MAX_RETRIES); do
     break
   fi
 
-  if grep -qE "Couldn't download packages|404.*Not Found.*gcc|404.*Not Found.*libgcc" /tmp/lb-build.log; then
+  if grep -qE "Couldn't download packages|404.*Not Found.*(gcc|libgcc|libstdc)" /tmp/lb-build.log; then
     echo "=== Kali mirror has broken packages (404) — bootstrapping from Debian sid ==="
-    rm -rf chroot .build/bootstrap*
+    rm -rf chroot .build/bootstrap* .build/chroot*
 
-    # Bootstrap from Debian sid which has consistent packages
+    # Bootstrap from Debian sid which has consistent base packages.
+    # Live-build's chroot stage will switch sources to Kali and install
+    # everything else. The gcc-pin.pref.chroot APT pin keeps Debian's
+    # working GCC 14 libs so the broken GCC 16 packages are never pulled.
     mmdebstrap \
       --variant=minbase \
       --include=apt,gnupg \
       --aptopt='Acquire::Retries "5";' \
       sid chroot http://deb.debian.org/debian
 
-    # Switch the chroot to Kali repos
-    cat > chroot/etc/apt/sources.list <<'SOURCES'
-deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware
-SOURCES
+    # Also drop the APT pin into the chroot directly in case live-build
+    # archives config is applied after apt-get update
+    mkdir -p chroot/etc/apt/preferences.d
+    cp config/archives/gcc-pin.pref.chroot \
+       chroot/etc/apt/preferences.d/gcc-pin.pref
 
-    # Trust Kali archive key
-    cp /usr/share/keyrings/kali-archive-keyring.gpg \
-       chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
-
-    # Upgrade chroot to Kali packages
-    mount --bind /proc chroot/proc
-    mount --bind /sys  chroot/sys
-    mount --bind /dev  chroot/dev
-    chroot chroot apt-get update -y
-    chroot chroot apt-get dist-upgrade -y --allow-downgrades || true
-    umount chroot/dev chroot/sys chroot/proc
-
-    # Mark bootstrap complete for live-build
+    # Mark bootstrap complete — lb build will skip straight to chroot stage
     mkdir -p .build
     touch .build/bootstrap
 
-    # Retry — lb build will skip bootstrap and proceed to chroot + binary
     continue
 
   elif grep -qE "Mirror sync in progress|unexpected size|Hash Sum mismatch|index files failed" /tmp/lb-build.log; then
