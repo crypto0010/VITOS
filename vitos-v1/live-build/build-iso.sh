@@ -15,32 +15,48 @@ fi
 lb clean --purge || true
 ./auto/config
 
-# Try normal build — if debootstrap fails on a transient mirror issue
-# (e.g. GCC package transition), fall back to mmdebstrap which uses
-# APT's full resolver and can select older consistent packages.
-if lb build 2>&1 | tee /tmp/lb-build.log; then
-  echo "=== lb build succeeded ==="
-else
+MAX_RETRIES=3
+for attempt in $(seq 1 $MAX_RETRIES); do
+  echo "=== Build attempt $attempt of $MAX_RETRIES ==="
+
+  if lb build 2>&1 | tee /tmp/lb-build.log; then
+    echo "=== lb build succeeded on attempt $attempt ==="
+    break
+  fi
+
+  # Identify failure type from the log
   if grep -q "Couldn't download packages" /tmp/lb-build.log; then
-    echo "=== Debootstrap mirror issue — retrying with mmdebstrap ==="
+    echo "=== Debootstrap package download failure — retrying with mmdebstrap ==="
     rm -rf chroot .build/bootstrap*
 
     mmdebstrap \
       --variant=minbase \
       --include=apt,kali-archive-keyring \
-      --aptopt='Acquire::Retries "3";' \
+      --aptopt='Acquire::Retries "5";' \
       kali-rolling chroot http://http.kali.org/kali
 
     mkdir -p .build
     touch .build/bootstrap
+    continue
 
-    lb build 2>&1 | tee /tmp/lb-build-retry.log
+  elif grep -q "Mirror sync in progress\|unexpected size\|Hash Sum mismatch\|index files failed" /tmp/lb-build.log; then
+    echo "=== Mirror sync in progress — waiting 90s before retry ==="
+    sleep 90
+    lb clean --chroot || true
+    rm -rf .build/chroot*
+    continue
+
   else
-    echo "=== Build failed (not a mirror issue) ==="
-    tail -100 /tmp/lb-build.log
-    exit 1
+    echo "=== Non-transient failure on attempt $attempt ==="
+    tail -80 /tmp/lb-build.log
+    if [ "$attempt" -eq "$MAX_RETRIES" ]; then
+      exit 1
+    fi
+    sleep 30
+    lb clean --chroot || true
+    rm -rf .build/chroot*
   fi
-fi
+done
 
 ISO=""; for f in *.iso; do [ -f "$f" ] && ISO="$f" && break; done
 if [ -z "$ISO" ]; then
