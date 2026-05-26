@@ -25,32 +25,36 @@ for attempt in $(seq 1 $MAX_RETRIES); do
   fi
 
   if grep -qE "Couldn't download packages|404.*Not Found.*(gcc|libgcc|libstdc)" /tmp/lb-build.log; then
-    echo "=== Kali mirror has broken packages (404) — bootstrapping from Debian sid ==="
+    echo "=== Kali mirror has broken GCC 16 packages — using mmdebstrap with Debian testing fallback ==="
     rm -rf chroot .build/bootstrap* .build/chroot*
 
-    # Bootstrap from Debian sid which has consistent base packages.
-    # Live-build's chroot stage will switch sources to Kali and install
-    # everything else. The gcc-pin.pref.chroot APT pin keeps Debian's
-    # working GCC 14 libs so the broken GCC 16 packages are never pulled.
+    # Bootstrap from Kali, but add Debian testing as a supplementary
+    # source for GCC packages. Pin GCC 16 to -1 so APT picks GCC 14
+    # from Debian testing instead of the broken Kali packages.
+    GCC_PIN='Package: gcc-16-base\nPin: version *\nPin-Priority: -1\n\nPackage: gcc-14-base libgcc-s1 libstdc++6\nPin: release a=testing\nPin-Priority: 999'
+
     mmdebstrap \
       --variant=minbase \
-      --include=apt,gnupg \
+      --include=apt,gnupg,kali-archive-keyring \
       --aptopt='Acquire::Retries "5";' \
-      sid chroot http://deb.debian.org/debian
-
-    # Trust the Kali archive key inside the Debian sid chroot
-    mkdir -p chroot/etc/apt/trusted.gpg.d
-    cp /usr/share/keyrings/kali-archive-keyring.gpg \
-       chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
-
-    # Drop the APT pin into the chroot to block GCC 16 packages
-    mkdir -p chroot/etc/apt/preferences.d
-    cp config/archives/gcc-pin.pref.chroot \
-       chroot/etc/apt/preferences.d/gcc-pin.pref
+      --keyring=/usr/share/keyrings/kali-archive-keyring.gpg \
+      --keyring=/usr/share/keyrings/debian-archive-keyring.gpg \
+      --setup-hook='echo "deb http://deb.debian.org/debian testing main" > "$1/etc/apt/sources.list.d/debian-testing.list"' \
+      --setup-hook="mkdir -p \"\$1/etc/apt/preferences.d\" && printf '$GCC_PIN\n' > \"\$1/etc/apt/preferences.d/gcc-pin\"" \
+      kali-rolling chroot http://http.kali.org/kali
 
     # Mark bootstrap complete — lb build will skip straight to chroot stage
     mkdir -p .build
     touch .build/bootstrap
+
+    # Ensure the GCC pin and Kali keyring persist into the chroot for lb
+    mkdir -p chroot/etc/apt/preferences.d chroot/etc/apt/trusted.gpg.d
+    cp /usr/share/keyrings/kali-archive-keyring.gpg \
+       chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
+    printf "$GCC_PIN\n" > chroot/etc/apt/preferences.d/gcc-pin
+
+    # Remove the Debian testing source — lb will set up Kali sources
+    rm -f chroot/etc/apt/sources.list.d/debian-testing.list
 
     continue
 

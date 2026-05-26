@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qemu-system-x86 qemu-utils ovmf \
     imagemagick fonts-dejavu-core \
     golang \
-    kali-archive-keyring \
+    kali-archive-keyring debian-archive-keyring \
     nodejs npm \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
