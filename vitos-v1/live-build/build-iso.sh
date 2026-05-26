@@ -38,8 +38,12 @@ for attempt in $(seq 1 $MAX_RETRIES); do
       --aptopt='Acquire::Retries "5";' \
       sid chroot http://deb.debian.org/debian
 
-    # Also drop the APT pin into the chroot directly in case live-build
-    # archives config is applied after apt-get update
+    # Trust the Kali archive key inside the Debian sid chroot
+    mkdir -p chroot/etc/apt/trusted.gpg.d
+    cp /usr/share/keyrings/kali-archive-keyring.gpg \
+       chroot/etc/apt/trusted.gpg.d/kali-archive-keyring.gpg
+
+    # Drop the APT pin into the chroot to block GCC 16 packages
     mkdir -p chroot/etc/apt/preferences.d
     cp config/archives/gcc-pin.pref.chroot \
        chroot/etc/apt/preferences.d/gcc-pin.pref
