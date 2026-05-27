@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Install VITOS
+GenericName=System Installer
+Comment=Install VITOS to your hard drive
+Exec=pkexec calamares
+Icon=calamares
+Terminal=false
+Categories=System;
+Keywords=installer;calamares;system;

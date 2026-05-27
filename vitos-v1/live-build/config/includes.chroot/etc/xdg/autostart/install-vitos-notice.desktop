@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=VITOS Install Notice
+Exec=sh -c 'sleep 5 && xfce4-terminal --hold --command="echo Welcome to VITOS Live! && echo && echo To install VITOS to your hard drive, use the Install VITOS shortcut on your desktop. && echo"'
+Terminal=false
+Hidden=false
+OnlyShowIn=XFCE;
+X-XFCE-Autostart-Override=true

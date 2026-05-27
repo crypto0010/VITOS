@@ -1,0 +1,183 @@
+#!/bin/sh
+set -e
+
+# Set up Calamares installer configuration for VITOS.
+# If calamares-settings-kali is available, use it; otherwise create our own.
+
+if dpkg -s calamares-settings-kali >/dev/null 2>&1; then
+    echo "calamares-settings-kali already installed — skipping custom config"
+    exit 0
+fi
+
+apt-get install -y calamares-settings-kali 2>/dev/null && exit 0 || true
+
+echo "calamares-settings-kali unavailable — creating VITOS Calamares config"
+
+mkdir -p /etc/calamares/modules
+mkdir -p /etc/calamares/branding/vitos
+
+cat > /etc/calamares/settings.conf << 'EOF'
+---
+modules-search: [ local, /usr/lib/calamares/modules ]
+sequence:
+  - show:
+    - welcome
+    - locale
+    - keyboard
+    - partition
+    - users
+    - summary
+  - exec:
+    - partition
+    - mount
+    - unpackfs
+    - machineid
+    - fstab
+    - locale
+    - keyboard
+    - localecfg
+    - networkcfg
+    - hwclock
+    - services-systemd
+    - initramfscfg
+    - initramfs
+    - grubcfg
+    - bootloader
+    - umount
+  - show:
+    - finished
+branding: vitos
+EOF
+
+LOGO="/usr/share/icons/hicolor/scalable/apps/calamares.svg"
+if [ -f /usr/share/plymouth/themes/vitos/vitos-logo-480.png ]; then
+    LOGO="/usr/share/plymouth/themes/vitos/vitos-logo-480.png"
+fi
+
+cat > /etc/calamares/branding/vitos/branding.desc << BRAND
+---
+componentName: vitos
+welcomeStyleCalamares: true
+strings:
+    productName:         "VITOS"
+    shortProductName:    "VITOS"
+    version:             "1.0.2"
+    shortVersion:        "1.0.2"
+    versionedName:       "VITOS 1.0.2"
+    shortVersionedName:  "VITOS 1.0.2"
+    bootloaderEntryName: "VITOS"
+    productUrl:          "https://crypto0010.github.io/VITOS/"
+    supportUrl:          "https://crypto0010.github.io/VITOS/"
+    knownIssuesUrl:      "https://github.com/crypto0010/VITOS/issues"
+images:
+    productLogo:         "${LOGO}"
+    productIcon:         "${LOGO}"
+slideshow:               "show.qml"
+style:
+   SidebarBackground:    "#0a0e2a"
+   SidebarText:          "#FFFFFF"
+   SidebarTextSelect:    "#4CB5F5"
+BRAND
+
+cat > /etc/calamares/branding/vitos/show.qml << 'EOF'
+import QtQuick 2.0;
+Presentation
+{
+    Slide {
+        Text {
+            text: "Welcome to VITOS\nVIT Bhopal Cybersecurity Lab OS"
+            font.pixelSize: 24
+            color: "white"
+            anchors.centerIn: parent
+            horizontalAlignment: Text.AlignHCenter
+        }
+    }
+}
+EOF
+
+cat > /etc/calamares/modules/unpackfs.conf << 'EOF'
+---
+unpack:
+    - source: "/run/live/medium/live/filesystem.squashfs"
+      sourcefs: "squashfs"
+      destination: ""
+EOF
+
+cat > /etc/calamares/modules/bootloader.conf << 'EOF'
+---
+efiBootLoader: "grub"
+kernel: "/vmlinuz"
+img: "/initrd.img"
+timeout: 10
+grubInstall: "grub-install"
+grubMkconfig: "grub-mkconfig"
+grubCfg: "/boot/grub/grub.cfg"
+grubProbe: "grub-probe"
+efiBootloaderId: "VITOS"
+EOF
+
+cat > /etc/calamares/modules/users.conf << 'EOF'
+---
+defaultGroups:
+    - sudo
+    - cdrom
+    - floppy
+    - audio
+    - dip
+    - video
+    - plugdev
+    - netdev
+    - bluetooth
+    - lpadmin
+    - scanner
+autologinGroup: autologin
+doAutologin: false
+setRootPassword: true
+doReusePassword: true
+passwordRequirements:
+    minLength: 8
+EOF
+
+cat > /etc/calamares/modules/welcome.conf << 'EOF'
+---
+showSupportUrl: true
+showKnownIssuesUrl: true
+showReleaseNotesUrl: false
+requirements:
+    requiredStorage: 20
+    requiredRam: 2.0
+    check:
+        - storage
+        - ram
+    required:
+        - storage
+EOF
+
+cat > /etc/calamares/modules/partition.conf << 'EOF'
+---
+efiSystemPartition: "/boot/efi"
+efiSystemPartitionSize: 512M
+userSwapChoices:
+    - none
+    - small
+    - file
+drawNestedPartitions: false
+alwaysShowPartitionLabels: true
+defaultPartitionTableType: gpt
+defaultFileSystemType: "ext4"
+EOF
+
+cat > /etc/calamares/modules/finished.conf << 'EOF'
+---
+restartNowEnabled: true
+restartNowChecked: true
+restartNowCommand: "systemctl -i reboot"
+EOF
+
+cat > /etc/calamares/modules/locale.conf << 'EOF'
+---
+region: "Asia"
+zone: "Kolkata"
+EOF
+
+echo "VITOS Calamares configuration created"
