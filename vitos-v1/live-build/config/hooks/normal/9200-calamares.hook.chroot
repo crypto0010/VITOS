@@ -1,22 +1,20 @@
 #!/bin/sh
 set -e
 
-# Set up Calamares installer configuration for VITOS.
-# If calamares-settings-kali is available, use it; otherwise create our own.
+echo "=== Configuring VITOS Calamares dark theme ==="
 
-if dpkg -s calamares-settings-kali >/dev/null 2>&1; then
-    echo "calamares-settings-kali already installed — skipping custom config"
+if ! dpkg -s calamares >/dev/null 2>&1; then
+    echo "Calamares not found — skipping theme setup"
     exit 0
 fi
 
-apt-get install -y calamares-settings-kali 2>/dev/null && exit 0 || true
+BRAND="/etc/calamares/branding/vitos"
+MODULES="/etc/calamares/modules"
 
-echo "calamares-settings-kali unavailable — creating VITOS Calamares config"
+mkdir -p "$BRAND" "$MODULES"
 
-mkdir -p /etc/calamares/modules
-mkdir -p /etc/calamares/branding/vitos
-
-cat > /etc/calamares/settings.conf << 'EOF'
+# ── settings.conf ────────────────────────────────────────────
+cat > /etc/calamares/settings.conf << 'SETTINGS'
 ---
 modules-search: [ local, /usr/lib/calamares/modules ]
 sequence:
@@ -47,55 +45,790 @@ sequence:
   - show:
     - finished
 branding: vitos
-EOF
+SETTINGS
 
-LOGO="/usr/share/icons/hicolor/scalable/apps/calamares.svg"
-if [ -f /usr/share/plymouth/themes/vitos/vitos-logo-480.png ]; then
-    LOGO="/usr/share/plymouth/themes/vitos/vitos-logo-480.png"
+# ── Resolve branding images ─────────────────────────────────
+LOGO_REF="/usr/share/icons/hicolor/scalable/apps/calamares.svg"
+ICON_REF="$LOGO_REF"
+
+for candidate in \
+    /usr/share/vitos/branding/calamares-logo.png \
+    /usr/share/plymouth/themes/vitos/splash.png; do
+    if [ -f "$candidate" ]; then
+        LOGO_REF="$candidate"
+        break
+    fi
+done
+
+if [ -f /usr/share/vitos/branding/calamares-icon.png ]; then
+    ICON_REF="/usr/share/vitos/branding/calamares-icon.png"
 fi
 
-cat > /etc/calamares/branding/vitos/branding.desc << BRAND
+# If convert is available, generate properly-sized branding images
+if command -v convert >/dev/null 2>&1; then
+    if [ -f /usr/share/plymouth/themes/vitos/splash.png ]; then
+        convert /usr/share/plymouth/themes/vitos/splash.png \
+            -gravity center -crop 600x400+0-100 +repage \
+            -resize 320x "$BRAND/product-logo.png" 2>/dev/null && \
+            LOGO_REF="product-logo.png" || true
+    fi
+
+    convert -size 64x64 xc:none \
+        -fill '#4CB5F5' -draw 'roundrectangle 0,0 63,63 12,12' \
+        -fill white -font DejaVu-Sans-Bold -pointsize 36 \
+        -gravity center -annotate +0+0 'V' \
+        "$BRAND/product-icon.png" 2>/dev/null && \
+        ICON_REF="product-icon.png" || true
+fi
+
+# ── branding.desc ────────────────────────────────────────────
+cat > "$BRAND/branding.desc" << BRAND
 ---
 componentName: vitos
 welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+
 strings:
     productName:         "VITOS"
     shortProductName:    "VITOS"
     version:             "1.0.2"
-    shortVersion:        "1.0.2"
+    shortVersion:        "1.0"
     versionedName:       "VITOS 1.0.2"
-    shortVersionedName:  "VITOS 1.0.2"
+    shortVersionedName:  "VITOS 1.0"
     bootloaderEntryName: "VITOS"
     productUrl:          "https://crypto0010.github.io/VITOS/"
     supportUrl:          "https://crypto0010.github.io/VITOS/"
     knownIssuesUrl:      "https://github.com/crypto0010/VITOS/issues"
+    releaseNotesUrl:     "https://github.com/crypto0010/VITOS/releases"
+
 images:
-    productLogo:         "${LOGO}"
-    productIcon:         "${LOGO}"
+    productLogo:         "${LOGO_REF}"
+    productIcon:         "${ICON_REF}"
+
 slideshow:               "show.qml"
+slideshowAPI:            2
+
 style:
-   SidebarBackground:    "#0a0e2a"
-   SidebarText:          "#FFFFFF"
-   SidebarTextSelect:    "#4CB5F5"
+    SidebarBackground:        "#080b20"
+    SidebarText:              "#6b7394"
+    SidebarTextSelect:        "#ffffff"
+    SidebarTextHighlight:     "#4CB5F5"
+    SidebarBackgroundCurrent: "#0d1117"
+
+stylesheet: "stylesheet.qss"
 BRAND
 
-cat > /etc/calamares/branding/vitos/show.qml << 'EOF'
-import QtQuick 2.0;
-Presentation
-{
-    Slide {
-        Text {
-            text: "Welcome to VITOS\nVIT Bhopal Cybersecurity Lab OS"
-            font.pixelSize: 24
-            color: "white"
+# ── stylesheet.qss ──────────────────────────────────────────
+cat > "$BRAND/stylesheet.qss" << 'QSS'
+/* VITOS Dark Theme for Calamares
+   Palette: #0d1117 bg, #161b22 surface, #21262d elevated,
+            #30363d border, #4CB5F5 accent, #e6edf3 text */
+
+* {
+    font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+}
+
+#mainApp {
+    background-color: #0d1117;
+    color: #e6edf3;
+}
+
+#sidebarApp {
+    background-color: #080b20;
+}
+
+#sidebarMenuApp {
+    background-color: transparent;
+    padding: 4px 0;
+}
+
+#logoApp {
+    background-color: #080b20;
+    padding: 12px;
+}
+
+QWidget {
+    background-color: #0d1117;
+    color: #e6edf3;
+    font-size: 13px;
+}
+
+QLabel {
+    color: #e6edf3;
+    background-color: transparent;
+}
+
+QLabel#heading, QLabel[objectName="heading"] {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+    padding-bottom: 4px;
+}
+
+QPushButton {
+    background-color: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 13px;
+    min-height: 32px;
+    min-width: 80px;
+}
+
+QPushButton:hover {
+    background-color: #30363d;
+    border-color: #4CB5F5;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #0d1117;
+}
+
+QPushButton:disabled {
+    background-color: #161b22;
+    color: #484f58;
+    border-color: #21262d;
+}
+
+#next, QPushButton[objectName="next"] {
+    background-color: #4CB5F5;
+    color: #0d1117;
+    border: none;
+    font-weight: bold;
+    padding: 8px 28px;
+}
+
+#next:hover {
+    background-color: #6dc8ff;
+}
+
+#next:pressed {
+    background-color: #3a9fd8;
+}
+
+#cancel {
+    background-color: transparent;
+    border: 1px solid #30363d;
+    color: #8b949e;
+}
+
+#cancel:hover {
+    border-color: #f87171;
+    color: #f87171;
+}
+
+#back {
+    background-color: transparent;
+    border: 1px solid #30363d;
+    color: #8b949e;
+}
+
+#back:hover {
+    border-color: #4CB5F5;
+    color: #4CB5F5;
+}
+
+QLineEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    selection-background-color: #4CB5F5;
+    selection-color: #0d1117;
+}
+
+QLineEdit:focus, QSpinBox:focus {
+    border-color: #4CB5F5;
+    background-color: #1c2128;
+}
+
+QComboBox {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 32px;
+}
+
+QComboBox:hover, QComboBox:focus {
+    border-color: #4CB5F5;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #8b949e;
+    margin-right: 8px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    selection-background-color: rgba(76, 181, 245, 0.25);
+    selection-color: #ffffff;
+    outline: none;
+}
+
+QProgressBar {
+    background-color: #161b22;
+    border: none;
+    border-radius: 10px;
+    text-align: center;
+    color: #e6edf3;
+    min-height: 20px;
+    font-size: 11px;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #3a9fd8, stop:0.5 #4CB5F5, stop:1 #6dc8ff);
+    border-radius: 10px;
+}
+
+QCheckBox {
+    spacing: 10px;
+    color: #e6edf3;
+    background-color: transparent;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid #30363d;
+    background-color: #161b22;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #4CB5F5;
+    border-color: #4CB5F5;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #4CB5F5;
+}
+
+QRadioButton {
+    spacing: 10px;
+    color: #e6edf3;
+    background-color: transparent;
+}
+
+QRadioButton::indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    border: 2px solid #30363d;
+    background-color: #161b22;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #4CB5F5;
+    border-color: #4CB5F5;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #4CB5F5;
+}
+
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #30363d;
+    border-radius: 4px;
+    min-height: 40px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #4CB5F5;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    height: 0;
+    background: none;
+    border: none;
+}
+
+QScrollBar:horizontal {
+    background-color: transparent;
+    height: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #30363d;
+    border-radius: 4px;
+    min-width: 40px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #4CB5F5;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    width: 0;
+    background: none;
+    border: none;
+}
+
+QGroupBox {
+    background-color: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    margin-top: 20px;
+    padding: 24px 16px 12px 16px;
+    font-weight: bold;
+    color: #e6edf3;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 2px 12px;
+    color: #4CB5F5;
+    font-size: 14px;
+}
+
+QListView, QListWidget {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    outline: none;
+    padding: 4px;
+}
+
+QListView::item, QListWidget::item {
+    padding: 8px;
+    border-radius: 4px;
+}
+
+QListView::item:selected, QListWidget::item:selected {
+    background-color: rgba(76, 181, 245, 0.2);
+    color: #ffffff;
+}
+
+QListView::item:hover, QListWidget::item:hover {
+    background-color: rgba(76, 181, 245, 0.08);
+}
+
+QTreeView {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    alternate-background-color: #1c2128;
+    outline: none;
+}
+
+QTreeView::item {
+    padding: 6px 4px;
+}
+
+QTreeView::item:selected {
+    background-color: rgba(76, 181, 245, 0.2);
+    color: #ffffff;
+}
+
+QTreeView::branch {
+    background-color: transparent;
+}
+
+QHeaderView::section {
+    background-color: #21262d;
+    color: #8b949e;
+    border: none;
+    border-bottom: 1px solid #30363d;
+    border-right: 1px solid #30363d;
+    padding: 8px 6px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QTabWidget::pane {
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    background-color: #161b22;
+    top: -1px;
+}
+
+QTabBar::tab {
+    background-color: #0d1117;
+    color: #8b949e;
+    border: 1px solid #21262d;
+    border-bottom: none;
+    padding: 10px 20px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    background-color: #161b22;
+    color: #ffffff;
+    border-bottom-color: #161b22;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #4CB5F5;
+    background-color: #1c2128;
+}
+
+QToolTip {
+    background-color: #1c2128;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+}
+
+QFrame[frameShape="4"], QFrame[frameShape="5"] {
+    background-color: #21262d;
+    border: none;
+    max-height: 1px;
+}
+
+QDialog {
+    background-color: #0d1117;
+    color: #e6edf3;
+}
+
+QMenu {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px;
+}
+
+QMenu::item {
+    padding: 8px 28px 8px 12px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background-color: rgba(76, 181, 245, 0.2);
+    color: #ffffff;
+}
+
+QMenu::separator {
+    height: 1px;
+    background-color: #21262d;
+    margin: 4px 8px;
+}
+
+QTextBrowser, QTextEdit {
+    background-color: #161b22;
+    color: #e6edf3;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 13px;
+}
+
+QSlider::groove:horizontal {
+    background-color: #21262d;
+    height: 6px;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #4CB5F5;
+    width: 18px;
+    height: 18px;
+    margin: -6px 0;
+    border-radius: 9px;
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #4CB5F5;
+    border-radius: 3px;
+}
+QSS
+
+# ── show.qml — animated dark slideshow ──────────────────────
+cat > "$BRAND/show.qml" << 'QML'
+import QtQuick 2.0
+
+Rectangle {
+    id: presentation
+    anchors.fill: parent
+    color: "#0d1117"
+
+    property int currentIndex: 0
+    property int slideCount: 5
+
+    /* ── Slide 0: Welcome ── */
+    Item {
+        anchors.fill: parent
+        anchors.bottomMargin: 50
+        opacity: presentation.currentIndex === 0 ? 1.0 : 0.0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
+
+        Column {
             anchors.centerIn: parent
-            horizontalAlignment: Text.AlignHCenter
+            spacing: 16
+            width: parent.width * 0.75
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "VITOS"
+                font.pixelSize: 52
+                font.weight: Font.Bold
+                font.letterSpacing: 10
+                color: "#ffffff"
+            }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 80; height: 3; radius: 2; color: "#4CB5F5"
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "VIT Bhopal Cybersecurity Lab OS"
+                font.pixelSize: 18; font.weight: Font.DemiBold
+                color: "#4CB5F5"
+                horizontalAlignment: Text.AlignHCenter
+            }
+            Item { width: 1; height: 16 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                text: "A purpose-built Linux distribution for cybersecurity\neducation, research, and hands-on training."
+                font.pixelSize: 14; color: "#8b949e"
+                horizontalAlignment: Text.AlignHCenter
+                lineHeight: 1.6; wrapMode: Text.WordWrap
+            }
+            Item { width: 1; height: 24 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Installing — this may take a few minutes..."
+                font.pixelSize: 13; color: "#6b7394"; font.italic: true
+            }
+        }
+    }
+
+    /* ── Slide 1: Security Tools ── */
+    Item {
+        anchors.fill: parent
+        anchors.bottomMargin: 50
+        opacity: presentation.currentIndex === 1 ? 1.0 : 0.0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 16
+            width: parent.width * 0.75
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Professional Security Suite"
+                font.pixelSize: 28; font.weight: Font.Bold; color: "#ffffff"
+            }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 60; height: 3; radius: 2; color: "#4CB5F5"
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Pre-configured & Ready to Use"
+                font.pixelSize: 15; color: "#4CB5F5"
+            }
+            Item { width: 1; height: 8 }
+            Grid {
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns: 2; columnSpacing: 48; rowSpacing: 12
+                Text { text: "•  Metasploit Framework"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Burp Suite"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Ghidra"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Wireshark"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Nmap"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Aircrack-ng"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  John the Ripper"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  SQLMap"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Hashcat"; font.pixelSize: 13; color: "#e6edf3" }
+                Text { text: "•  Radare2"; font.pixelSize: 13; color: "#e6edf3" }
+            }
+            Item { width: 1; height: 8 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "...and 30+ more security tools"
+                font.pixelSize: 13; color: "#6b7394"; font.italic: true
+            }
+        }
+    }
+
+    /* ── Slide 2: AI ── */
+    Item {
+        anchors.fill: parent
+        anchors.bottomMargin: 50
+        opacity: presentation.currentIndex === 2 ? 1.0 : 0.0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 16
+            width: parent.width * 0.75
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "AI-Powered Analysis"
+                font.pixelSize: 28; font.weight: Font.Bold; color: "#ffffff"
+            }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 60; height: 3; radius: 2; color: "#4CB5F5"
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Local AI with Ollama + Gemma 3"
+                font.pixelSize: 15; color: "#4CB5F5"
+            }
+            Item { width: 1; height: 8 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                text: "VITOS includes a pre-loaded Gemma 3 language model\nrunning locally via Ollama for intelligent security analysis.\n\nAnalyze logs, review code for vulnerabilities, get explanations\nof attack techniques — all completely offline and private.\n\nNo cloud dependency. No data leaves your machine."
+                font.pixelSize: 14; color: "#8b949e"
+                horizontalAlignment: Text.AlignHCenter
+                lineHeight: 1.6; wrapMode: Text.WordWrap
+            }
+        }
+    }
+
+    /* ── Slide 3: Hardening ── */
+    Item {
+        anchors.fill: parent
+        anchors.bottomMargin: 50
+        opacity: presentation.currentIndex === 3 ? 1.0 : 0.0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 16
+            width: parent.width * 0.75
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Hardened by Default"
+                font.pixelSize: 28; font.weight: Font.Bold; color: "#ffffff"
+            }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 60; height: 3; radius: 2; color: "#4CB5F5"
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Security-First Architecture"
+                font.pixelSize: 15; color: "#4CB5F5"
+            }
+            Item { width: 1; height: 8 }
+            Column {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 14
+                Text { text: "▸  Firejail application sandboxing"; font.pixelSize: 14; color: "#e6edf3" }
+                Text { text: "▸  Comprehensive audit logging"; font.pixelSize: 14; color: "#e6edf3" }
+                Text { text: "▸  PAM consent workflows"; font.pixelSize: 14; color: "#e6edf3" }
+                Text { text: "▸  Role-based access (admin / student)"; font.pixelSize: 14; color: "#e6edf3" }
+                Text { text: "▸  Encrypted DNS via dnscrypt-proxy"; font.pixelSize: 14; color: "#e6edf3" }
+                Text { text: "▸  Account lockout after failed logins"; font.pixelSize: 14; color: "#e6edf3" }
+            }
+        }
+    }
+
+    /* ── Slide 4: University ── */
+    Item {
+        anchors.fill: parent
+        anchors.bottomMargin: 50
+        opacity: presentation.currentIndex === 4 ? 1.0 : 0.0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 500 } }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 16
+            width: parent.width * 0.75
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Built for Learning"
+                font.pixelSize: 28; font.weight: Font.Bold; color: "#ffffff"
+            }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 60; height: 3; radius: 2; color: "#4CB5F5"
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "VIT Bhopal University"
+                font.pixelSize: 15; color: "#4CB5F5"
+            }
+            Item { width: 1; height: 8 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                text: "Developed by the Department of Computer Science & Engineering\nfor students and faculty in cybersecurity programs.\n\nDual admin/student roles with guided workflows\nfor structured lab environments.\n\nEvery tool configured, every service hardened —\nso you can focus on learning."
+                font.pixelSize: 14; color: "#8b949e"
+                horizontalAlignment: Text.AlignHCenter
+                lineHeight: 1.6; wrapMode: Text.WordWrap
+            }
+        }
+    }
+
+    /* ── Slide indicators ── */
+    Row {
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 16
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: 10
+
+        Repeater {
+            model: presentation.slideCount
+            Rectangle {
+                width: index === presentation.currentIndex ? 28 : 8
+                height: 8; radius: 4
+                color: index === presentation.currentIndex ? "#4CB5F5" : "#21262d"
+                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                Behavior on color { ColorAnimation { duration: 300 } }
+            }
+        }
+    }
+
+    /* ── Auto-advance ── */
+    Timer {
+        interval: 8000; running: true; repeat: true
+        onTriggered: {
+            presentation.currentIndex = (presentation.currentIndex + 1) % presentation.slideCount
         }
     }
 }
-EOF
+QML
 
-cat > /etc/calamares/modules/unpackfs.conf << 'EOF'
+# ── Module configs ───────────────────────────────────────────
+
+cat > "$MODULES/unpackfs.conf" << 'EOF'
 ---
 unpack:
     - source: "/run/live/medium/live/filesystem.squashfs"
@@ -103,7 +836,7 @@ unpack:
       destination: ""
 EOF
 
-cat > /etc/calamares/modules/bootloader.conf << 'EOF'
+cat > "$MODULES/bootloader.conf" << 'EOF'
 ---
 efiBootLoader: "grub"
 kernel: "/vmlinuz"
@@ -116,7 +849,7 @@ grubProbe: "grub-probe"
 efiBootloaderId: "VITOS"
 EOF
 
-cat > /etc/calamares/modules/users.conf << 'EOF'
+cat > "$MODULES/users.conf" << 'EOF'
 ---
 defaultGroups:
     - sudo
@@ -138,7 +871,7 @@ passwordRequirements:
     minLength: 8
 EOF
 
-cat > /etc/calamares/modules/welcome.conf << 'EOF'
+cat > "$MODULES/welcome.conf" << 'EOF'
 ---
 showSupportUrl: true
 showKnownIssuesUrl: true
@@ -153,7 +886,7 @@ requirements:
         - storage
 EOF
 
-cat > /etc/calamares/modules/partition.conf << 'EOF'
+cat > "$MODULES/partition.conf" << 'EOF'
 ---
 efiSystemPartition: "/boot/efi"
 efiSystemPartitionSize: 512M
@@ -167,17 +900,34 @@ defaultPartitionTableType: gpt
 defaultFileSystemType: "ext4"
 EOF
 
-cat > /etc/calamares/modules/finished.conf << 'EOF'
+cat > "$MODULES/finished.conf" << 'EOF'
 ---
 restartNowEnabled: true
 restartNowChecked: true
 restartNowCommand: "systemctl -i reboot"
 EOF
 
-cat > /etc/calamares/modules/locale.conf << 'EOF'
+cat > "$MODULES/locale.conf" << 'EOF'
 ---
 region: "Asia"
 zone: "Kolkata"
 EOF
 
-echo "VITOS Calamares configuration created"
+# ── Desktop entry ────────────────────────────────────────────
+DESKTOP="/usr/share/applications/install-vitos.desktop"
+if [ ! -f "$DESKTOP" ]; then
+    cat > "$DESKTOP" << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Install VITOS
+GenericName=System Installer
+Comment=Install VITOS to your hard drive
+Exec=pkexec calamares
+Icon=calamares
+Terminal=false
+Categories=System;
+Keywords=installer;calamares;system;
+EOF
+fi
+
+echo "=== VITOS Calamares dark theme configured ==="

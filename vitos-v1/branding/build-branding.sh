@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Generates VITOS branding imagery from the source VIT Bhopal logo.
-# Bootloader splash is left to Kali's stock live-build templates.
 set -euo pipefail
 
 SRC="$(dirname "$0")/vit-bhopal-logo.png"
 OUT_BASE="$(dirname "$0")/../packages/vitos-base/usr/share/vitos/branding"
 OUT_PLY="$(dirname "$0")/../packages/vitos-base/usr/share/plymouth/themes/vitos"
+OUT_CAL="$(dirname "$0")/../live-build/config/includes.chroot/usr/share/vitos/branding"
 
-mkdir -p "$OUT_BASE" "$OUT_PLY"
+mkdir -p "$OUT_BASE" "$OUT_PLY" "$OUT_CAL"
 
 BG="#0a0e2a"
 FG="#ffffff"
@@ -29,7 +29,20 @@ convert -size 1920x1080 xc:"$BG" \
   -annotate +0+200 'Booting VITOS…' \
   "$OUT_PLY/splash.png"
 
-# 3. ASCII header
+# 3. Calamares product logo — VIT logo on dark background, sized for sidebar
+convert -size 320x120 xc:"#0d1117" \
+  \( "$SRC" -resize 280x -background none -gravity center -extent 280x \) \
+  -gravity center -composite \
+  "$OUT_CAL/calamares-logo.png"
+
+# 4. Calamares product icon — 64x64 "V" monogram
+convert -size 64x64 xc:none \
+  -fill '#4CB5F5' -draw 'roundrectangle 0,0 63,63 12,12' \
+  -fill white -font DejaVu-Sans-Bold -pointsize 36 \
+  -gravity center -annotate +0+0 'V' \
+  "$OUT_CAL/calamares-icon.png"
+
+# 5. ASCII header
 cat > "$OUT_BASE/banner-ascii.txt" <<'ASCII'
    __     __  ___   _____   ___    ____
    \ \   / / |_ _| |_   _| / _ \  / ___|
@@ -41,4 +54,4 @@ cat > "$OUT_BASE/banner-ascii.txt" <<'ASCII'
 ASCII
 
 echo "Branding artifacts written:"
-ls -1 "$OUT_BASE" "$OUT_PLY"
+ls -1 "$OUT_BASE" "$OUT_PLY" "$OUT_CAL"

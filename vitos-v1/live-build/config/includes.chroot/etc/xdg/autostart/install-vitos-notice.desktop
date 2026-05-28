@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=VITOS Install Notice
-Exec=sh -c 'sleep 5 && xfce4-terminal --hold --command="echo Welcome to VITOS Live! && echo && echo To install VITOS to your hard drive, use the Install VITOS shortcut on your desktop. && echo"'
+Exec=sh -c 'sleep 8 && notify-send -i calamares "Welcome to VITOS Live" "To install VITOS to your hard drive, click Install VITOS in the applications menu." -t 15000 2>/dev/null || true'
 Terminal=false
 Hidden=false
 OnlyShowIn=XFCE;
