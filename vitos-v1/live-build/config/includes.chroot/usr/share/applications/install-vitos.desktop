@@ -2,9 +2,9 @@
 Type=Application
 Name=Install VITOS
 GenericName=System Installer
-Comment=Install VITOS to your hard drive
+Comment=Install VITOS — Developed by Dr. Hemraj, VIT Bhopal University
 Exec=pkexec calamares
 Icon=calamares
 Terminal=false
 Categories=System;
-Keywords=installer;calamares;system;
+Keywords=installer;calamares;system;vitos;

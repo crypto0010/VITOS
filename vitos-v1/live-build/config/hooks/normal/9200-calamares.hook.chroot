@@ -100,6 +100,7 @@ strings:
     supportUrl:          "https://crypto0010.github.io/VITOS/"
     knownIssuesUrl:      "https://github.com/crypto0010/VITOS/issues"
     releaseNotesUrl:     "https://github.com/crypto0010/VITOS/releases"
+    productDescription:  "Developed by Dr. Hemraj — VIT Bhopal University"
 
 images:
     productLogo:         "${LOGO_REF}"
@@ -604,16 +605,22 @@ Rectangle {
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "VIT Bhopal Cybersecurity Lab OS"
+                text: "Developed by Dr. Hemraj"
                 font.pixelSize: 18; font.weight: Font.DemiBold
                 color: "#4CB5F5"
                 horizontalAlignment: Text.AlignHCenter
             }
-            Item { width: 1; height: 16 }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "VIT Bhopal University"
+                font.pixelSize: 14; color: "#8b949e"
+                horizontalAlignment: Text.AlignHCenter
+            }
+            Item { width: 1; height: 12 }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width
-                text: "A purpose-built Linux distribution for cybersecurity\neducation, research, and hands-on training."
+                text: "A purpose-built cybersecurity lab OS for education,\nresearch, and hands-on training."
                 font.pixelSize: 14; color: "#8b949e"
                 horizontalAlignment: Text.AlignHCenter
                 lineHeight: 1.6; wrapMode: Text.WordWrap
@@ -782,14 +789,14 @@ Rectangle {
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "VIT Bhopal University"
+                text: "Developed by Dr. Hemraj"
                 font.pixelSize: 15; color: "#4CB5F5"
             }
             Item { width: 1; height: 8 }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width
-                text: "Developed by the Department of Computer Science & Engineering\nfor students and faculty in cybersecurity programs.\n\nDual admin/student roles with guided workflows\nfor structured lab environments.\n\nEvery tool configured, every service hardened —\nso you can focus on learning."
+                text: "VIT Bhopal University\nDepartment of Computer Science & Engineering\n\nDesigned for students and faculty in cybersecurity programs.\nDual admin/student roles with guided workflows\nfor structured lab environments.\n\nEvery tool configured, every service hardened —\nso you can focus on learning."
                 font.pixelSize: 14; color: "#8b949e"
                 horizontalAlignment: Text.AlignHCenter
                 lineHeight: 1.6; wrapMode: Text.WordWrap
@@ -847,7 +854,16 @@ grubMkconfig: "grub-mkconfig"
 grubCfg: "/boot/grub/grub.cfg"
 grubProbe: "grub-probe"
 efiBootloaderId: "VITOS"
+installEFIFallback: true
 EOF
+
+# Ensure grub-install works in the installed system by verifying EFI packages
+for pkg in grub-efi-amd64 efibootmgr; do
+    if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "Installing missing EFI package: $pkg"
+        apt-get install -y "$pkg" || true
+    fi
+done
 
 cat > "$MODULES/users.conf" << 'EOF'
 ---

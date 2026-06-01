@@ -18,7 +18,7 @@ convert -size 1920x1080 \
   \( "$SRC" -resize 720x -background none -gravity center -extent 720x \) \
   -gravity center -composite \
   -gravity south -fill "$FG" -font DejaVu-Sans-Bold -pointsize 36 \
-  -annotate +0+120 'VITOS — VIT Cybersecurity Lab' \
+  -annotate +0+120 'VITOS — Developed by Dr. Hemraj, VIT Bhopal' \
   "$OUT_BASE/lightdm-background.png"
 
 # 2. Plymouth boot splash — 1920x1080
@@ -26,7 +26,7 @@ convert -size 1920x1080 xc:"$BG" \
   \( "$SRC" -resize 480x -background none -gravity center -extent 480x \) \
   -gravity center -composite \
   -gravity south -fill "$FG" -font DejaVu-Sans -pointsize 28 \
-  -annotate +0+200 'Booting VITOS…' \
+  -annotate +0+200 'VITOS — Developed by Dr. Hemraj' \
   "$OUT_PLY/splash.png"
 
 # 3. Calamares product logo — VIT logo on dark background, sized for sidebar
@@ -50,7 +50,7 @@ cat > "$OUT_BASE/banner-ascii.txt" <<'ASCII'
      \ V /    | |    | |  | |_| |  ___) |
       \_/    |___|   |_|   \___/  |____/
 
-         VIT Bhopal — Cybersecurity Lab OS
+    Developed by Dr. Hemraj — VIT Bhopal University
 ASCII
 
 echo "Branding artifacts written:"

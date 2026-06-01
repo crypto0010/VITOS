@@ -17,6 +17,11 @@ lightdm
 lightdm-gtk-greeter
 calamares
 
+# GRUB EFI bootloader (required by Calamares to install bootloader on UEFI systems)
+grub-efi-amd64
+efibootmgr
+os-prober
+
 # Dependencies (most pulled transitively, listed for clarity)
 firejail
 auditd
