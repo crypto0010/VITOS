@@ -843,13 +843,50 @@ unpack:
       destination: ""
 EOF
 
+# ── grub-install wrapper (prevents NVRAM write failures) ────
+cat > /usr/local/bin/grub-install-efi << 'WRAPPER'
+#!/bin/sh
+# VITOS grub-install wrapper
+# Adds --no-nvram for EFI targets to prevent NVRAM write failures
+# that cause "error code 1" in live/VM/Secure-Boot environments.
+
+case "$*" in
+    *x86_64-efi*|*arm64-efi*|*efi*)
+        # Attempt 1: --no-nvram only
+        /usr/sbin/grub-install --no-nvram "$@" 2>/tmp/grub-efi.log
+        rc=$?
+        if [ $rc -ne 0 ]; then
+            echo "grub-install --no-nvram failed (rc=$rc), retrying with --removable..." >&2
+            # Attempt 2: --no-nvram + --removable (installs to fallback EFI path)
+            /usr/sbin/grub-install --no-nvram --removable "$@" 2>/tmp/grub-efi.log
+            rc=$?
+        fi
+        if [ $rc -ne 0 ]; then
+            echo "grub-install still failing, trying minimal install..." >&2
+            # Attempt 3: strip --target, let grub auto-detect
+            ARGS=$(echo "$@" | sed 's/--target=[^ ]*//')
+            /usr/sbin/grub-install --no-nvram --removable $ARGS 2>/tmp/grub-efi.log
+            rc=$?
+        fi
+        if [ $rc -ne 0 ]; then
+            cat /tmp/grub-efi.log >&2
+        fi
+        exit $rc
+        ;;
+    *)
+        exec /usr/sbin/grub-install "$@"
+        ;;
+esac
+WRAPPER
+chmod +x /usr/local/bin/grub-install-efi
+
 cat > "$MODULES/bootloader.conf" << 'EOF'
 ---
 efiBootLoader: "grub"
 kernel: "/vmlinuz"
 img: "/initrd.img"
 timeout: 10
-grubInstall: "grub-install"
+grubInstall: "/usr/local/bin/grub-install-efi"
 grubMkconfig: "grub-mkconfig"
 grubCfg: "/boot/grub/grub.cfg"
 grubProbe: "grub-probe"
@@ -858,7 +895,7 @@ installEFIFallback: true
 EOF
 
 # Ensure grub-install works in the installed system by verifying EFI packages
-for pkg in grub-efi-amd64 efibootmgr; do
+for pkg in grub-efi-amd64 grub-efi-amd64-bin efibootmgr grub-common; do
     if ! dpkg -s "$pkg" >/dev/null 2>&1; then
         echo "Installing missing EFI package: $pkg"
         apt-get install -y "$pkg" || true
