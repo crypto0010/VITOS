@@ -41,6 +41,7 @@ sequence:
     - initramfs
     - grubcfg
     - bootloader
+    - shellprocess@postinstall
     - umount
   - show:
     - finished
@@ -843,42 +844,87 @@ unpack:
       destination: ""
 EOF
 
-# ── grub-install wrapper (prevents NVRAM write failures) ────
-cat > /usr/local/bin/grub-install-efi << 'WRAPPER'
+# ── grub-install interception via dpkg-divert ───────────────
+# Calamares's bootloader module calls /usr/sbin/grub-install directly.
+# The grubInstall config key is unreliable across Calamares versions.
+# dpkg-divert is the Debian-standard way to replace a packaged binary —
+# it survives package upgrades and intercepts ALL callers.
+echo "Diverting grub-install for NVRAM-safe wrapper..."
+dpkg-divert --local --rename --add /usr/sbin/grub-install 2>/dev/null || true
+
+cat > /usr/sbin/grub-install << 'WRAPPER'
 #!/bin/sh
-# VITOS grub-install wrapper
+# VITOS grub-install wrapper (installed via dpkg-divert)
+# The real binary is at /usr/sbin/grub-install.distrib
 # Adds --no-nvram for EFI targets to prevent NVRAM write failures
 # that cause "error code 1" in live/VM/Secure-Boot environments.
 
+REAL=/usr/sbin/grub-install.distrib
+if [ ! -x "$REAL" ]; then
+    echo "ERROR: real grub-install not found at $REAL" >&2
+    exit 1
+fi
+
 case "$*" in
     *x86_64-efi*|*arm64-efi*|*efi*)
-        # Attempt 1: --no-nvram only
-        /usr/sbin/grub-install --no-nvram "$@" 2>/tmp/grub-efi.log
-        rc=$?
-        if [ $rc -ne 0 ]; then
-            echo "grub-install --no-nvram failed (rc=$rc), retrying with --removable..." >&2
-            # Attempt 2: --no-nvram + --removable (installs to fallback EFI path)
-            /usr/sbin/grub-install --no-nvram --removable "$@" 2>/tmp/grub-efi.log
-            rc=$?
+        # Attempt 1: add --no-nvram to skip NVRAM variable writes
+        "$REAL" --no-nvram "$@" 2>/tmp/grub-efi.log && exit 0
+
+        # Attempt 2: also add --removable (installs to /EFI/BOOT/BOOTX64.EFI)
+        echo "[VITOS] --no-nvram failed, retrying with --removable..." >&2
+        "$REAL" --no-nvram --removable "$@" 2>/tmp/grub-efi.log && exit 0
+
+        # Attempt 3: strip --target flag, let GRUB auto-detect platform
+        echo "[VITOS] retrying with auto-detect..." >&2
+        FILTERED=""
+        for arg in "$@"; do
+            case "$arg" in --target=*) continue ;; esac
+            FILTERED="$FILTERED $arg"
+        done
+        "$REAL" --no-nvram --removable $FILTERED 2>/tmp/grub-efi.log && exit 0
+
+        # Attempt 4: build EFI binary manually with grub-mkimage
+        echo "[VITOS] grub-install failed, trying grub-mkimage fallback..." >&2
+        EFI_DIR=""
+        BOOT_ID=""
+        for arg in "$@"; do
+            case "$arg" in
+                --efi-directory=*) EFI_DIR="${arg#--efi-directory=}" ;;
+                --bootloader-id=*) BOOT_ID="${arg#--bootloader-id=}" ;;
+            esac
+        done
+        EFI_DIR="${EFI_DIR:-/boot/efi}"
+        BOOT_ID="${BOOT_ID:-VITOS}"
+        if command -v grub-mkimage >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
+            mkdir -p "$EFI_DIR/EFI/$BOOT_ID" "$EFI_DIR/EFI/BOOT"
+            grub-mkimage -o "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                -O x86_64-efi -p "/boot/grub" \
+                part_gpt part_msdos fat ext2 normal boot linux \
+                configfile loopback chain efinet efifwsetup \
+                lsefi help terminal ls search search_fs_file \
+                search_fs_uuid search_label echo reboot halt 2>/dev/null && {
+                cp "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                   "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
+                mkdir -p /boot/grub/x86_64-efi
+                cp /usr/lib/grub/x86_64-efi/*.mod /boot/grub/x86_64-efi/ 2>/dev/null || true
+                cp /usr/lib/grub/x86_64-efi/*.lst /boot/grub/x86_64-efi/ 2>/dev/null || true
+                echo "[VITOS] grub-mkimage fallback succeeded" >&2
+                exit 0
+            }
         fi
-        if [ $rc -ne 0 ]; then
-            echo "grub-install still failing, trying minimal install..." >&2
-            # Attempt 3: strip --target, let grub auto-detect
-            ARGS=$(echo "$@" | sed 's/--target=[^ ]*//')
-            /usr/sbin/grub-install --no-nvram --removable $ARGS 2>/tmp/grub-efi.log
-            rc=$?
-        fi
-        if [ $rc -ne 0 ]; then
-            cat /tmp/grub-efi.log >&2
-        fi
-        exit $rc
+
+        cat /tmp/grub-efi.log >&2
+        exit 1
         ;;
     *)
-        exec /usr/sbin/grub-install "$@"
+        exec "$REAL" "$@"
         ;;
 esac
 WRAPPER
-chmod +x /usr/local/bin/grub-install-efi
+chmod +x /usr/sbin/grub-install
+
+# Remove old wrapper that relied on grubInstall config key (didn't work)
+rm -f /usr/local/bin/grub-install-efi
 
 cat > "$MODULES/bootloader.conf" << 'EOF'
 ---
@@ -886,7 +932,7 @@ efiBootLoader: "grub"
 kernel: "/vmlinuz"
 img: "/initrd.img"
 timeout: 10
-grubInstall: "/usr/local/bin/grub-install-efi"
+grubInstall: "grub-install"
 grubMkconfig: "grub-mkconfig"
 grubCfg: "/boot/grub/grub.cfg"
 grubProbe: "grub-probe"
@@ -894,7 +940,84 @@ efiBootloaderId: "VITOS"
 installEFIFallback: true
 EOF
 
-# Ensure grub-install works in the installed system by verifying EFI packages
+# ── grubcfg.conf — VITOS-branded GRUB defaults ─────────────
+cat > "$MODULES/grubcfg.conf" << 'EOF'
+---
+distributor: "VITOS"
+keepDistributor: true
+cmdlineLinuxDefault: "quiet splash"
+timeout: 10
+EOF
+
+# ── shellprocess@postinstall — EFI fixup & cleanup ─────────
+cat > "$MODULES/shellprocess-postinstall.conf" << 'EOF'
+---
+dontChroot: false
+timeout: 120
+script:
+    - "/usr/local/bin/vitos-postinstall"
+EOF
+
+cat > /usr/local/bin/vitos-postinstall << 'POSTINSTALL'
+#!/bin/sh
+# VITOS post-install fixup
+# Runs inside the target chroot after bootloader installation.
+
+# 1. Create EFI stub grub.cfg for fallback boot path.
+#    Debian's Calamares copies the EFI binary to /EFI/BOOT/BOOTX64.EFI
+#    but doesn't create the grub.cfg it needs — without this, you get a
+#    GRUB shell instead of booting.
+if [ -d /boot/efi/EFI/BOOT ]; then
+    cat > /boot/efi/EFI/BOOT/grub.cfg << 'STUB'
+insmod part_gpt
+insmod ext2
+insmod search_fs_uuid
+search --no-floppy --set=root --file /boot/grub/grub.cfg
+set prefix=($root)/boot/grub
+configfile $prefix/grub.cfg
+STUB
+fi
+
+# Same stub for the VITOS-branded EFI directory
+if [ -d /boot/efi/EFI/VITOS ] && [ ! -f /boot/efi/EFI/VITOS/grub.cfg ]; then
+    cat > /boot/efi/EFI/VITOS/grub.cfg << 'STUB3'
+insmod part_gpt
+insmod ext2
+insmod search_fs_uuid
+search --no-floppy --set=root --file /boot/grub/grub.cfg
+set prefix=($root)/boot/grub
+configfile $prefix/grub.cfg
+STUB3
+fi
+
+# 2. Regenerate GRUB config to pick up VITOS distributor name
+if command -v update-grub >/dev/null 2>&1; then
+    update-grub 2>/dev/null || true
+elif command -v grub-mkconfig >/dev/null 2>&1; then
+    grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+fi
+
+# 3. Try to add NVRAM boot entry (best-effort, non-fatal)
+if [ -d /sys/firmware/efi ] && command -v efibootmgr >/dev/null 2>&1; then
+    ESP_DEV=$(findmnt -no SOURCE /boot/efi 2>/dev/null || true)
+    if [ -n "$ESP_DEV" ]; then
+        DISK=$(echo "$ESP_DEV" | sed 's/[0-9]*$//' | sed 's/p$//')
+        PART=$(echo "$ESP_DEV" | grep -o '[0-9]*$')
+        efibootmgr --create --disk "$DISK" --part "$PART" \
+            --label "VITOS" \
+            --loader '\EFI\VITOS\grubx64.efi' 2>/dev/null || true
+    fi
+fi
+
+# 4. Remove live-mode installer artifacts from the installed system
+rm -f /usr/share/applications/install-vitos.desktop
+rm -f /etc/xdg/autostart/install-vitos-notice.desktop
+
+exit 0
+POSTINSTALL
+chmod +x /usr/local/bin/vitos-postinstall
+
+# Ensure EFI packages are present
 for pkg in grub-efi-amd64 grub-efi-amd64-bin efibootmgr grub-common; do
     if ! dpkg -s "$pkg" >/dev/null 2>&1; then
         echo "Installing missing EFI package: $pkg"
