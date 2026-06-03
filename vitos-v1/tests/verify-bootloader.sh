@@ -32,7 +32,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq \
     grub-efi-amd64-bin grub-pc-bin grub-common grub2-common efibootmgr \
-    dosfstools gdisk fdisk util-linux mount dpkg debconf >/dev/null
+    dosfstools e2fsprogs gdisk fdisk util-linux mount dpkg debconf >/dev/null
 echo "installed."
 
 # ---------------------------------------------------------------------------
