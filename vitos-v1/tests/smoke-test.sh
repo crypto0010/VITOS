@@ -25,9 +25,19 @@ xorriso -osirrox on -indev "$ISO" \
   }
 
 KVM_FLAG=()
-[ -e /dev/kvm ] && KVM_FLAG=(-enable-kvm)
+if [ -e /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+  KVM_FLAG=(-enable-kvm -cpu host)
+  echo "KVM available -> hardware acceleration ON"
+else
+  echo "WARNING: /dev/kvm not usable -> falling back to slow TCG soft-emulation."
+  echo "         The full live stack likely will NOT reach multi-user in time."
+fi
 
-qemu-system-x86_64 "${KVM_FLAG[@]}" -m 6144 -smp 4 \
+MEM="${SMOKE_MEM:-6144}"          # guest RAM (MB); tune down for small runners
+CPUS="${SMOKE_CPUS:-4}"
+TIMEOUT="${SMOKE_TIMEOUT:-900}"   # max seconds to wait for the in-guest selftest
+
+qemu-system-x86_64 "${KVM_FLAG[@]}" -m "$MEM" -smp "$CPUS" \
   -kernel "$WORK/extract/vmlinuz" \
   -initrd "$WORK/extract/initrd.img" \
   -append "boot=live components quiet vitos.consent=preaccepted vitos.selftest=1 console=ttyS0 findiso=/$(basename "$ISO")" \
@@ -37,8 +47,22 @@ qemu-system-x86_64 "${KVM_FLAG[@]}" -m 6144 -smp 4 \
   -net none \
   -daemonize -pidfile "$WORK/qemu.pid"
 
-echo "Waiting for boot to settle (300s)…"
-sleep 300
+# Wait until the in-guest selftest finishes (it prints "VITOS-SELFTEST: DONE"
+# on ttyS0 once it has run every check) — or QEMU dies, or we hit the deadline.
+echo "Waiting up to ${TIMEOUT}s for the in-guest selftest to finish…"
+waited=0
+while [ "$waited" -lt "$TIMEOUT" ]; do
+  if grep -q "VITOS-SELFTEST: DONE" "$LOG" 2>/dev/null; then
+    echo "selftest completed after ~${waited}s"
+    break
+  fi
+  if [ -f "$WORK/qemu.pid" ] && ! kill -0 "$(cat "$WORK/qemu.pid")" 2>/dev/null; then
+    echo "QEMU exited after ~${waited}s before the selftest finished"
+    break
+  fi
+  sleep 10
+  waited=$((waited + 10))
+done
 
 fail=0
 
@@ -77,6 +101,11 @@ grep -q "VIT Bhopal" "$LOG" && echo "  PASS: banner" \
 kill "$(cat "$WORK/qemu.pid")" 2>/dev/null || true
 
 if [ "$fail" -gt 0 ]; then
+  echo "===== serial.log (first 80 lines) ====="
+  head -n 80 "$LOG" 2>/dev/null || echo "(serial log empty — guest produced no output)"
+  echo "===== serial.log (last 120 lines) ====="
+  tail -n 120 "$LOG" 2>/dev/null || true
+  echo "======================================="
   echo "SMOKE TEST FAILED ($fail assertions)"
   exit 1
 fi
