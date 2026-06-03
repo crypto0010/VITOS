@@ -1,0 +1,136 @@
+name: verify-iso-boot
+
+# Ground-truth check that the PUBLISHED VITOS ISO can actually boot.
+#
+# The release smoke test direct-boots an extracted kernel (it bypasses GRUB)
+# AND it was silently failing on a QEMU arg bug, so every ISO so far shipped
+# boot-unverified. This job downloads the real release asset, reassembles it,
+# verifies the checksum, then answers the exact question behind the user's
+# boot error:
+#
+#     ../../grub-core/loader/i386/linux.c: invalid magic number
+#     you need to load the kernel first
+#
+# "invalid magic number" means GRUB read /live/vmlinuz but its bytes are not a
+# valid Linux kernel. So we extract that exact file from the published ISO and
+# check the bzImage magic GRUB itself checks:
+#   * boot signature 0xAA55 at offset 0x1FE
+#   * Linux setup header "HdrS" at offset 0x202
+# If those are present, our ISO's kernel IS loadable -> the user's failure is
+# the boot environment (e.g. Ventoy's loopback loader), not the build.
+# If they're absent, it's a real build defect and we fix the build.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to test (blank = latest)"
+        required: false
+        default: ""
+  push:
+    paths:
+      - ".github/workflows/verify-iso-boot.yml"
+      - "vitos-v1/tests/smoke-test.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Download published ISO and prove the kernel is loadable
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 qemu-utils ovmf xorriso file coreutils
+
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dl && cd dl
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -n "$TAG" ]; then
+            gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p '*.part*.iso' -p 'SHA256SUMS'
+          else
+            gh release download -R "$GITHUB_REPOSITORY" -p '*.part*.iso' -p 'SHA256SUMS'
+          fi
+          ls -lh
+
+      - name: Reassemble + verify checksum (must match the user's medium)
+        run: |
+          cd dl
+          BASE=$(ls *.part00.iso | sed 's/\.part00\.iso$//')
+          echo "reassembling ${BASE}.iso from parts ..."
+          cat "${BASE}".part*.iso > "${BASE}.iso"
+          echo "size: $(stat -c%s "${BASE}.iso") bytes"
+          echo "=== sha256sum -c SHA256SUMS ==="
+          sha256sum -c SHA256SUMS
+          rm -f "${BASE}".part*.iso
+          echo "ISO=$PWD/${BASE}.iso" >> "$GITHUB_ENV"
+
+      - name: Extract /live/vmlinuz + /live/initrd.img from the published ISO
+        run: |
+          mkdir -p ex
+          xorriso -osirrox on -indev "$ISO" \
+            -extract /live/vmlinuz ex/vmlinuz \
+            -extract /live/initrd.img ex/initrd.img 2>/dev/null || \
+          xorriso -osirrox on -indev "$ISO" \
+            -extract /live/vmlinuz-vitos ex/vmlinuz \
+            -extract /live/initrd.img-vitos ex/initrd.img
+          ls -lh ex
+          file ex/vmlinuz ex/initrd.img
+
+      - name: 'DECISIVE: is /live/vmlinuz a valid kernel? (GRUB''s invalid-magic check)'
+        run: |
+          BF=$(dd if=ex/vmlinuz bs=1 skip=510 count=2 2>/dev/null | od -An -tx1 | tr -d ' \n')
+          HS=$(dd if=ex/vmlinuz bs=1 skip=514 count=4 2>/dev/null)
+          SZ=$(stat -c%s ex/vmlinuz)
+          echo "boot_flag @0x1FE = '$BF'   (expect '55aa')"
+          echo "setup_hdr @0x202 = '$HS'   (expect 'HdrS')"
+          echo "vmlinuz size     = $SZ bytes"
+          fail=0
+          [ "$BF" = "55aa" ]  || { echo "FAIL: 0xAA55 boot signature MISSING -> GRUB says 'invalid magic number'"; fail=1; }
+          [ "$HS" = "HdrS" ]  || { echo "FAIL: Linux setup header 'HdrS' MISSING"; fail=1; }
+          [ "$SZ" -gt 1000000 ] || { echo "FAIL: vmlinuz too small ($SZ bytes)"; fail=1; }
+          if [ "$fail" = 0 ]; then
+            echo "PASS: the PUBLISHED ISO's /live/vmlinuz is a valid, GRUB-loadable kernel."
+            echo "=> the boot error is the boot environment, NOT the ISO build."
+          else
+            echo "=> this is a real BUILD defect in /live/vmlinuz."
+            exit 1
+          fi
+
+      - name: Boot the extracted kernel in QEMU (proves it reaches userspace)
+        continue-on-error: true
+        run: |
+          qemu-img create -f qcow2 /tmp/d.qcow2 10G >/dev/null
+          qemu-system-x86_64 -m 4096 -smp 2 \
+            -kernel ex/vmlinuz -initrd ex/initrd.img \
+            -append "boot=live components console=ttyS0 vitos.consent=preaccepted" \
+            -drive file=/tmp/d.qcow2,if=virtio,format=qcow2 \
+            -display none -serial file:serial-kernel.log -net none -no-reboot \
+            -daemonize -pidfile /tmp/q.pid
+          for i in $(seq 1 48); do
+            grep -qE "Linux version 6\.6\.52-vitos|Run /init|systemd|VIT Bhopal|login:" serial-kernel.log && break
+            sleep 5
+          done
+          echo "----- serial tail -----"; tail -n 40 serial-kernel.log 2>/dev/null || true
+          kill "$(cat /tmp/q.pid)" 2>/dev/null || true
+          if grep -qE "Linux version 6\.6\.52-vitos|Run /init|systemd|VIT Bhopal|login:" serial-kernel.log; then
+            echo "PASS: extracted kernel decompressed and booted into userspace."
+          else
+            echo "NOTE: no userspace marker within timeout (TCG is slow); kernel-magic check above is the decisive signal."
+          fi

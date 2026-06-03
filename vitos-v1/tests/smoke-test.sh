@@ -33,7 +33,7 @@ qemu-system-x86_64 "${KVM_FLAG[@]}" -m 6144 -smp 4 \
   -append "boot=live components quiet vitos.consent=preaccepted vitos.selftest=1 console=ttyS0 findiso=/$(basename "$ISO")" \
   -cdrom "$ISO" \
   -drive file="$qcow",if=virtio,format=qcow2 \
-  -nographic -serial file:"$LOG" \
+  -display none -serial file:"$LOG" \
   -net none \
   -daemonize -pidfile "$WORK/qemu.pid"
 

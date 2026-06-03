@@ -188,6 +188,24 @@ jobs:
 
           The first checksum line in \`SHA256SUMS\` is the full ISO; the
           rest are the parts.
+
+          ## Write to USB and boot
+
+          Write the **reassembled ISO** to a USB stick **byte-for-byte**.
+          The ISO is a hybrid image — a raw (dd-style) write boots its own
+          GRUB directly and is the most reliable method:
+
+          * **Windows:** Rufus, in **"DD Image" mode** (not "ISO Image" mode).
+          * **Any OS:** balenaEtcher, or \`dd if=${BASE}.iso of=/dev/sdX bs=4M conv=fsync\`.
+
+          ### Booting from Ventoy
+
+          Ventoy's **default mode** loop-mounts the ISO and can fail to load
+          the kernel with \`invalid magic number\` / \`you need to load the
+          kernel first\` (a known Ventoy issue with Debian-live ISOs). If you
+          use Ventoy: highlight the VITOS entry and press **Ctrl+r** to boot
+          in **GRUB2 Mode**, and keep Ventoy updated. A direct dd/Rufus-DD
+          write avoids the problem entirely.
           EOF
 
       # ---- smoke test -----------------------------------------------------
