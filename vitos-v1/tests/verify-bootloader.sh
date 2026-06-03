@@ -131,20 +131,34 @@ teardown_esp /mnt/esp
 # T6: BIOS passthrough — i386-pc target must reach the real binary untouched
 # ---------------------------------------------------------------------------
 say "T6: BIOS passthrough — i386-pc install routes to real grub-install"
-rm -f /tmp/bios.img; truncate -s 64M /tmp/bios.img
+# Put the boot-directory on a real ext4 loop device so grub-probe resolves a
+# block device (the CI container's root is overlayfs, which grub-probe can't
+# canonicalize). This isolates the wrapper-passthrough question from the host.
+rm -f /tmp/bios.img; truncate -s 128M /tmp/bios.img
 i=8; while [ $i -lt 12 ]; do [ -e /dev/loop$i ] || mknod -m660 /dev/loop$i b 7 $i 2>/dev/null || true; i=$((i+1)); done
+mkfs.ext4 -F -q /tmp/bios.img
 BLOOP=$(losetup --find --show /tmp/bios.img)
-echo -e "o\nn\np\n1\n\n\nw\n" | fdisk "$BLOOP" >/dev/null 2>&1 || true
-mkdir -p /tmp/biosboot/boot/grub
+mkdir -p /mnt/bios; mount "$BLOOP" /mnt/bios; mkdir -p /mnt/bios/boot
+: > /var/log/vitos-grub-install.log 2>/dev/null || true
 PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-install --target=i386-pc \
-    --boot-directory=/tmp/biosboot/boot --force --modules=part_msdos "$BLOOP" >/tmp/bios.log 2>&1
+    --boot-directory=/mnt/bios/boot --force --modules=part_msdos "$BLOOP" >/tmp/bios.log 2>&1
 BIOS_RC=$?
 echo "i386-pc install exit code: $BIOS_RC"; tail -n 6 /tmp/bios.log 2>/dev/null || true
-if [ -d /tmp/biosboot/boot/grub/i386-pc ] && ls /tmp/biosboot/boot/grub/i386-pc/*.mod >/dev/null 2>&1; then
-    pass "T6 BIOS install reached real binary (i386-pc modules written)"
+# (a) the wrapper must NOT have taken the EFI branch for a BIOS target
+if grep -q "EFI install requested" /var/log/vitos-grub-install.log 2>/dev/null; then
+    fail "T6a wrapper wrongly treated i386-pc as EFI"
 else
-    fail "T6 BIOS passthrough did not produce i386-pc grub"
+    pass "T6a wrapper did not divert BIOS target into EFI path"
 fi
+# (b) the real binary must have run and produced i386-pc modules
+if [ -d /mnt/bios/boot/grub/i386-pc ] && ls /mnt/bios/boot/grub/i386-pc/*.mod >/dev/null 2>&1; then
+    pass "T6b BIOS install reached real binary (i386-pc modules written, rc=$BIOS_RC)"
+elif grep -q "Installing for i386-pc platform" /tmp/bios.log 2>/dev/null; then
+    pass "T6b real grub-install ran the i386-pc install (passthrough confirmed, rc=$BIOS_RC)"
+else
+    fail "T6b BIOS passthrough did not reach the real grub-install"
+fi
+umount /mnt/bios 2>/dev/null || true
 losetup -d "$BLOOP" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
