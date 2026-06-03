@@ -1,0 +1,76 @@
+#!/bin/sh
+# VITOS post-install fixup.
+# Runs in the TARGET chroot via Calamares shellprocess@postinstall, AFTER the
+# bootloader module and BEFORE umount (so /boot/efi is still mounted). Every
+# step is best-effort and must never abort the install (always exit 0).
+#
+# This is belt-and-suspenders on top of the grub-install wrapper: it guarantees
+# the installed system boots under UEFI (including NVRAM-less VMs and Secure
+# Boot) and BIOS, and it cleans up live-only artifacts.
+
+LOG=/var/log/vitos-postinstall.log
+: > "$LOG" 2>/dev/null || true
+log() { echo "[VITOS postinstall] $*" >> "$LOG" 2>/dev/null || true; }
+log "starting"
+
+IS_EFI=0
+[ -d /sys/firmware/efi ] && IS_EFI=1
+[ -d /boot/efi/EFI ] && IS_EFI=1
+
+# 1. Let Debian's own grub postinst place a CORRECT removable install
+#    (shim + grub + stub grub.cfg, Secure-Boot-safe) at \EFI\BOOT\.
+#    This is the package-supported fix for Calamares issue #2416, where the
+#    built-in fallback copy drops you to a GRUB shell.
+if [ "$IS_EFI" = "1" ]; then
+    echo 'grub-efi-amd64 grub2/force_efi_extra_removable boolean true' \
+        | debconf-set-selections 2>/dev/null || true
+    DEBIAN_FRONTEND=noninteractive dpkg-reconfigure grub-efi-amd64 >> "$LOG" 2>&1 \
+        || log "dpkg-reconfigure grub-efi-amd64 skipped/failed (non-fatal)"
+fi
+
+# 2. Guarantee a removable EFI binary exists (NVRAM-free boot path).
+if [ "$IS_EFI" = "1" ] && [ ! -f /boot/efi/EFI/BOOT/BOOTX64.EFI ]; then
+    log "BOOTX64.EFI still missing - forcing grub-install --removable"
+    grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+        --bootloader-id=VITOS --no-nvram --removable >> "$LOG" 2>&1 \
+        || log "removable grub-install failed (non-fatal)"
+fi
+
+# 3. Debian's grub EFI stub needs a grub.cfg beside it or it drops to a shell.
+for d in /boot/efi/EFI/BOOT /boot/efi/EFI/VITOS; do
+    if [ -d "$d" ] && [ ! -f "$d/grub.cfg" ]; then
+        cat > "$d/grub.cfg" << 'STUB'
+search --no-floppy --set=root --file /boot/grub/grub.cfg
+set prefix=($root)/boot/grub
+configfile $prefix/grub.cfg
+STUB
+        log "wrote stub grub.cfg to $d"
+    fi
+done
+
+# 4. Generate the real GRUB menu (picks up the VITOS distributor name).
+if command -v update-grub >/dev/null 2>&1; then
+    update-grub >> "$LOG" 2>&1 || grub-mkconfig -o /boot/grub/grub.cfg >> "$LOG" 2>&1 || true
+else
+    grub-mkconfig -o /boot/grub/grub.cfg >> "$LOG" 2>&1 || true
+fi
+
+# 5. Best-effort NVRAM boot entry (harmless if it fails).
+if [ "$IS_EFI" = "1" ] && [ -d /sys/firmware/efi ] && command -v efibootmgr >/dev/null 2>&1; then
+    ESP_DEV=$(findmnt -no SOURCE /boot/efi 2>/dev/null || true)
+    if [ -n "$ESP_DEV" ]; then
+        DISK=$(echo "$ESP_DEV" | sed -E 's/p?[0-9]+$//')
+        PART=$(echo "$ESP_DEV" | grep -oE '[0-9]+$')
+        if [ -n "$DISK" ] && [ -n "$PART" ]; then
+            efibootmgr --create --disk "$DISK" --part "$PART" --label "VITOS" \
+                --loader '\EFI\VITOS\grubx64.efi' >> "$LOG" 2>&1 || true
+        fi
+    fi
+fi
+
+# 6. Remove live-only installer artifacts from the installed system.
+rm -f /usr/share/applications/install-vitos.desktop
+rm -f /etc/xdg/autostart/install-vitos-notice.desktop
+
+log "done"
+exit 0

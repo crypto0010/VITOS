@@ -1,0 +1,104 @@
+#!/bin/sh
+# VITOS grub-install wrapper.
+# Installed OVER /usr/sbin/grub-install via dpkg-divert (the real binary is
+# moved to /usr/sbin/grub-install.distrib). This file is the single source of
+# truth — it is shipped verbatim into the live filesystem and is also exercised
+# directly by .github/workflows/verify-bootloader.yml.
+#
+# WHY: Calamares' bootloader module runs, inside the target chroot:
+#   grub-install --target=x86_64-efi --efi-directory=/boot/efi \
+#                --bootloader-id=VITOS --force
+# On VMs/OVMF/Secure-Boot/full-NVRAM machines that single call returns exit 1
+# because it cannot write the UEFI NVRAM boot variable -> "Bootloader
+# installation error" and the whole install aborts.
+#
+# Two facts drive this wrapper:
+#   * --no-nvram skips the NVRAM write (avoids the exit-1), BUT a --no-nvram
+#     install ALONE is unbootable: nothing in firmware points at it.
+#   * --removable writes \EFI\BOOT\BOOTX64.EFI, the path every UEFI firmware
+#     boots automatically without any NVRAM entry.
+# So for EFI we do BOTH a standard pass (gets the NVRAM entry when possible)
+# and a --no-nvram --removable pass (guarantees a bootable fallback). Exit 0 if
+# either produced a usable EFI binary; grub-mkimage is the last resort.
+# BIOS / non-EFI targets pass straight through to the real binary.
+
+REAL=/usr/sbin/grub-install.distrib
+[ -x "$REAL" ] || REAL=$(command -v grub-install.distrib 2>/dev/null)
+LOG=/var/log/vitos-grub-install.log
+
+if [ -z "$REAL" ] || [ ! -x "$REAL" ]; then
+    echo "[VITOS grub-install] ERROR: real grub-install not found (expected /usr/sbin/grub-install.distrib)" >&2
+    exit 1
+fi
+
+log() {
+    echo "[VITOS grub-install] $*" >> "$LOG" 2>/dev/null || true
+    echo "[VITOS grub-install] $*" >&2
+}
+
+case " $* " in
+    *efi*)
+        EFI_DIR=/boot/efi
+        BOOT_ID=VITOS
+        for arg in "$@"; do
+            case "$arg" in
+                --efi-directory=*) EFI_DIR="${arg#--efi-directory=}" ;;
+                --bootloader-id=*) BOOT_ID="${arg#--bootloader-id=}" ;;
+            esac
+        done
+
+        : > "$LOG" 2>/dev/null || true
+        log "EFI install requested: $*"
+        log "efi-directory=$EFI_DIR bootloader-id=$BOOT_ID"
+        ok=0
+
+        # Pass 1 - standard install. Writes \EFI\<id>\grubx64.efi and, if the
+        # firmware allows it, the NVRAM boot entry. May fail on NVRAM write.
+        if "$REAL" "$@" >> "$LOG" 2>&1; then
+            log "pass 1 (standard) succeeded"
+            ok=1
+        else
+            log "pass 1 (standard) failed (likely NVRAM) - continuing"
+        fi
+
+        # Pass 2 - removable path. Writes \EFI\BOOT\BOOTX64.EFI and skips NVRAM
+        # entirely, so the machine boots even when NVRAM is unwritable.
+        if "$REAL" --no-nvram --removable "$@" >> "$LOG" 2>&1; then
+            log "pass 2 (--no-nvram --removable) succeeded"
+            ok=1
+        else
+            log "pass 2 (--no-nvram --removable) failed"
+        fi
+
+        if [ "$ok" = "1" ]; then
+            log "EFI install OK - bootable artifact present"
+            exit 0
+        fi
+
+        # Pass 3 - build the EFI image by hand. Only needs the x86_64-efi
+        # modules and a FAT ESP; no NVRAM, no efivars.
+        log "both grub-install passes failed - trying grub-mkimage"
+        if command -v grub-mkimage >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
+            mkdir -p "$EFI_DIR/EFI/$BOOT_ID" "$EFI_DIR/EFI/BOOT" /boot/grub/x86_64-efi
+            if grub-mkimage -o "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                    -O x86_64-efi -p "/boot/grub" \
+                    part_gpt part_msdos fat ext2 normal boot linux \
+                    configfile loopback chain efinet efifwsetup \
+                    lsefi help terminal ls search search_fs_file \
+                    search_fs_uuid search_label echo reboot halt >> "$LOG" 2>&1; then
+                cp "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                   "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
+                cp /usr/lib/grub/x86_64-efi/*.mod /boot/grub/x86_64-efi/ 2>/dev/null || true
+                cp /usr/lib/grub/x86_64-efi/*.lst /boot/grub/x86_64-efi/ 2>/dev/null || true
+                log "grub-mkimage fallback succeeded"
+                exit 0
+            fi
+        fi
+
+        log "ERROR: all EFI install strategies failed - see $LOG"
+        exit 1
+        ;;
+    *)
+        exec "$REAL" "$@"
+        ;;
+esac

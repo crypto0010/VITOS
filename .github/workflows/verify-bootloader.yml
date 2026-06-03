@@ -1,0 +1,31 @@
+name: verify-bootloader
+
+# Fast, focused proof that the VITOS grub-install wrapper fixes the Calamares
+# "Bootloader installation error" (grub-install ... returned error code 1).
+#
+# Runs in a real Kali container (matching the ISO base), reproduces the exact
+# grub-install call Calamares makes in the target chroot, and asserts the
+# wrapper produces a bootable EFI install without writable NVRAM. ~3-5 min,
+# vs ~40 min for a full ISO build.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "vitos-v1/live-build/config/includes.chroot/usr/local/share/vitos/grub-install"
+      - "vitos-v1/tests/verify-bootloader.sh"
+      - ".github/workflows/verify-bootloader.yml"
+
+jobs:
+  verify:
+    name: Reproduce + verify bootloader install
+    runs-on: ubuntu-22.04
+    container:
+      image: kalilinux/kali-rolling
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run bootloader verification
+        run: |
+          chmod +x vitos-v1/tests/verify-bootloader.sh
+          vitos-v1/tests/verify-bootloader.sh "$GITHUB_WORKSPACE"
