@@ -40,7 +40,7 @@ TIMEOUT="${SMOKE_TIMEOUT:-900}"   # max seconds to wait for the in-guest selftes
 qemu-system-x86_64 "${KVM_FLAG[@]}" -m "$MEM" -smp "$CPUS" \
   -kernel "$WORK/extract/vmlinuz" \
   -initrd "$WORK/extract/initrd.img" \
-  -append "boot=live components quiet vitos.consent=preaccepted vitos.selftest=1 console=ttyS0 findiso=/$(basename "$ISO")" \
+  -append "boot=live components quiet vitos.consent=preaccepted vitos.selftest=1 console=ttyS0" \
   -cdrom "$ISO" \
   -drive file="$qcow",if=virtio,format=qcow2 \
   -display none -serial file:"$LOG" \
