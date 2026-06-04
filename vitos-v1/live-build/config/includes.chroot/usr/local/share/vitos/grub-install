@@ -18,9 +18,12 @@
 #   * --removable writes \EFI\BOOT\BOOTX64.EFI, the path every UEFI firmware
 #     boots automatically without any NVRAM entry.
 # So for EFI we do BOTH a standard pass (gets the NVRAM entry when possible)
-# and a --no-nvram --removable pass (guarantees a bootable fallback). Exit 0 if
-# either produced a usable EFI binary; grub-mkimage is the last resort.
-# BIOS / non-EFI targets pass straight through to the real binary.
+# and a --no-nvram --removable pass (guarantees a bootable fallback), with
+# grub-mkimage as a last resort. The EFI path ALWAYS exits 0 — Calamares aborts
+# the whole install (and never reaches grub-mkconfig, so grub.cfg is never
+# written) on any non-zero grub-install. If every strategy fails we still exit 0
+# and let vitos-postinstall recover. BIOS / non-EFI targets pass straight
+# through to the real binary unchanged.
 
 REAL=/usr/sbin/grub-install.distrib
 [ -x "$REAL" ] || REAL=$(command -v grub-install.distrib 2>/dev/null)
@@ -50,6 +53,19 @@ case " $* " in
         : > "$LOG" 2>/dev/null || true
         log "EFI install requested: $*"
         log "efi-directory=$EFI_DIR bootloader-id=$BOOT_ID"
+
+        # Pre-flight. The installs need the ESP dirs to exist and the x86_64-efi
+        # modules to be present. mkdir is free; if the modules somehow went
+        # missing, try to restore them (best-effort — the target may have no
+        # network, but the build now guarantees they ship in the squashfs).
+        mkdir -p "$EFI_DIR/EFI/$BOOT_ID" "$EFI_DIR/EFI/BOOT" /boot/grub 2>/dev/null || true
+        if [ ! -d /usr/lib/grub/x86_64-efi ] || ! ls /usr/lib/grub/x86_64-efi/*.mod >/dev/null 2>&1; then
+            log "x86_64-efi modules missing - attempting to (re)install grub-efi-amd64-bin"
+            apt-get install -y --reinstall grub-efi-amd64-bin >> "$LOG" 2>&1 \
+                || apt-get install -y grub-efi-amd64-bin >> "$LOG" 2>&1 \
+                || log "could not restore modules (no network?) - continuing best-effort"
+        fi
+
         ok=0
 
         # Pass 1 - standard install. Writes \EFI\<id>\grubx64.efi and, if the
@@ -70,33 +86,45 @@ case " $* " in
             log "pass 2 (--no-nvram --removable) failed"
         fi
 
-        if [ "$ok" = "1" ]; then
-            log "EFI install OK - bootable artifact present"
-            exit 0
-        fi
-
-        # Pass 3 - build the EFI image by hand. Only needs the x86_64-efi
-        # modules and a FAT ESP; no NVRAM, no efivars.
-        log "both grub-install passes failed - trying grub-mkimage"
-        if command -v grub-mkimage >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
-            mkdir -p "$EFI_DIR/EFI/$BOOT_ID" "$EFI_DIR/EFI/BOOT" /boot/grub/x86_64-efi
-            if grub-mkimage -o "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
-                    -O x86_64-efi -p "/boot/grub" \
-                    part_gpt part_msdos fat ext2 normal boot linux \
-                    configfile loopback chain efinet efifwsetup \
-                    lsefi help terminal ls search search_fs_file \
-                    search_fs_uuid search_label echo reboot halt >> "$LOG" 2>&1; then
-                cp "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
-                   "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
-                cp /usr/lib/grub/x86_64-efi/*.mod /boot/grub/x86_64-efi/ 2>/dev/null || true
-                cp /usr/lib/grub/x86_64-efi/*.lst /boot/grub/x86_64-efi/ 2>/dev/null || true
-                log "grub-mkimage fallback succeeded"
-                exit 0
+        # Pass 3 - build the EFI image by hand if neither install left a
+        # bootable binary on the ESP. Only needs the x86_64-efi modules and a
+        # FAT ESP; no NVRAM, no efivars.
+        if [ "$ok" != "1" ] || [ ! -f "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" ]; then
+            log "no removable EFI binary yet - trying grub-mkimage"
+            if command -v grub-mkimage >/dev/null 2>&1 && [ -d /usr/lib/grub/x86_64-efi ]; then
+                mkdir -p "$EFI_DIR/EFI/$BOOT_ID" "$EFI_DIR/EFI/BOOT" /boot/grub/x86_64-efi
+                if grub-mkimage -o "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                        -O x86_64-efi -p "/boot/grub" \
+                        part_gpt part_msdos fat ext2 normal boot linux \
+                        configfile loopback chain efinet efifwsetup \
+                        lsefi help terminal ls search search_fs_file \
+                        search_fs_uuid search_label echo reboot halt >> "$LOG" 2>&1; then
+                    cp "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" \
+                       "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" 2>/dev/null || true
+                    cp /usr/lib/grub/x86_64-efi/*.mod /boot/grub/x86_64-efi/ 2>/dev/null || true
+                    cp /usr/lib/grub/x86_64-efi/*.lst /boot/grub/x86_64-efi/ 2>/dev/null || true
+                    log "grub-mkimage fallback succeeded"
+                    ok=1
+                fi
             fi
         fi
 
-        log "ERROR: all EFI install strategies failed - see $LOG"
-        exit 1
+        # Exit status. Calamares ABORTS the whole install on a non-zero
+        # grub-install (the error2.jpeg "Bootloader installation error"), and
+        # that abort happens BEFORE grub-mkconfig runs, so /boot/grub/grub.cfg
+        # never gets written either. We therefore NEVER return non-zero from the
+        # EFI path: if a bootable artifact exists we succeeded outright; if every
+        # strategy failed we still return 0 and defer to vitos-postinstall, which
+        # runs immediately after the bootloader module and makes three more
+        # recovery attempts plus writes the stub + real grub.cfg. A non-aborted
+        # install that postinstall can repair beats a hard abort that strands the
+        # user mid-install. The loud log makes a genuine failure diagnosable.
+        if [ -f "$EFI_DIR/EFI/BOOT/BOOTX64.EFI" ] || [ -f "$EFI_DIR/EFI/$BOOT_ID/grubx64.efi" ]; then
+            log "EFI install OK - bootable artifact present on ESP"
+        else
+            log "ERROR: no EFI binary produced by any strategy - deferring to vitos-postinstall (see $LOG); returning 0 so Calamares does not abort"
+        fi
+        exit 0
         ;;
     *)
         exec "$REAL" "$@"
