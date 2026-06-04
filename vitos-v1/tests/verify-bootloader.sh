@@ -179,6 +179,38 @@ echo "postinstall exit code: $POST_RC"; echo "--- postinstall log ---"; cat /var
 teardown_esp /boot/efi
 
 # ---------------------------------------------------------------------------
+# T8: the EFI path NEVER returns non-zero, even when every install strategy
+#     fails. This is the guarantee behind error2.jpeg: Calamares aborts the
+#     whole install on a non-zero grub-install, and that abort happens BEFORE
+#     grub-mkconfig runs — so /boot/grub/grub.cfg never gets written. As long as
+#     the wrapper exits 0, Calamares proceeds to grub-mkconfig (grub.cfg gets
+#     created) and to vitos-postinstall (which repairs the ESP). We simulate
+#     total failure with a READ-ONLY ESP so all three passes cannot write.
+# ---------------------------------------------------------------------------
+say "T8: wrapper exits 0 even when every EFI strategy fails (no Calamares abort)"
+rm -f /tmp/roesp.img
+truncate -s 64M /tmp/roesp.img
+mkfs.vfat -F32 /tmp/roesp.img >/dev/null 2>&1
+mkdir -p /mnt/roesp
+RLOOP=$(losetup --find --show /tmp/roesp.img)
+mount -o ro "$RLOOP" /mnt/roesp 2>/dev/null || mount "$RLOOP" /mnt/roesp
+mount -o remount,ro "$RLOOP" /mnt/roesp 2>/dev/null || true
+: > /var/log/vitos-grub-install.log 2>/dev/null || true
+PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-install \
+    --target=x86_64-efi --efi-directory=/mnt/roesp --bootloader-id=VITOS --force \
+    >/tmp/t8.log 2>&1
+T8_RC=$?
+echo "wrapper exit code on read-only ESP: $T8_RC"
+tail -n 6 /var/log/vitos-grub-install.log 2>/dev/null || true
+if [ "$T8_RC" -eq 0 ]; then
+    pass "T8 wrapper returned 0 despite total failure -> Calamares cannot abort at the bootloader step"
+else
+    fail "T8 wrapper returned $T8_RC -> Calamares WOULD abort (error2.jpeg reproduced)"
+fi
+umount /mnt/roesp 2>/dev/null || true
+losetup -d "$RLOOP" 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
 say "SUMMARY"
 if [ "$FAILED" -eq 0 ]; then
     printf '\033[1;32mALL CASES PASSED — bootloader fix verified end to end.\033[0m\n'

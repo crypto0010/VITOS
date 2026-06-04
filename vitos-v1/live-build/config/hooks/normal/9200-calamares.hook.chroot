@@ -846,30 +846,62 @@ EOF
 
 # ── grub-install interception via dpkg-divert ───────────────
 # Calamares's bootloader module calls grub-install INSIDE the target chroot
-# (check_target_env_call). On VMs/OVMF/Secure-Boot it returns exit 1 because it
-# can't write the UEFI NVRAM variable -> the install aborts.
-#
-# We divert /usr/sbin/grub-install to a wrapper that does a two-pass EFI install
-# (standard + --no-nvram --removable) so a bootable artifact always lands on the
-# ESP. The wrapper is a committed, separately-tested file
+# (check_target_env_call) and ABORTS the whole install if it returns non-zero.
+# On VMs/OVMF/Secure-Boot/full-NVRAM machines the stock call returns exit 1
+# because it can't write the UEFI NVRAM variable -> "Bootloader installation
+# error" (the failure in error2.jpeg). Because the bootloader module runs
+# grub-install BEFORE grub-mkconfig, that abort also means /boot/grub/grub.cfg
+# is never generated. We divert /usr/sbin/grub-install to a wrapper that always
+# lands a bootable artifact and never aborts the install. The wrapper is a
+# committed, separately-tested file
 # (includes.chroot/usr/local/share/vitos/grub-install) so CI exercises the exact
 # same code that ships — see .github/workflows/verify-bootloader.yml.
+#
+# CRITICAL ORDERING: the real grub-install (grub-common) and the x86_64-efi
+# modules (grub-efi-amd64-bin) MUST already be in the chroot before we divert —
+# otherwise dpkg-divert --rename has nothing to rename, .distrib is absent, and
+# the wrapper has no real binary to call. These are in package-lists/, but we
+# re-assert them here and FAIL THE BUILD if anything is missing. Previously this
+# only WARNED, which let bootloader-broken ISOs ship silently.
+echo "Ensuring grub EFI bootloader + modules are present BEFORE diverting..."
+for pkg in grub-common grub2-common grub-efi-amd64 grub-efi-amd64-bin efibootmgr; do
+    if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "  installing missing package: $pkg"
+        apt-get install -y "$pkg" || true
+    fi
+done
+
+if [ ! -x /usr/sbin/grub-install ]; then
+    echo "FATAL: /usr/sbin/grub-install absent after installing grub-common — cannot build a bootable VITOS" >&2
+    exit 1
+fi
+if ! { [ -d /usr/lib/grub/x86_64-efi ] && ls /usr/lib/grub/x86_64-efi/*.mod >/dev/null 2>&1; }; then
+    echo "FATAL: /usr/lib/grub/x86_64-efi modules missing — grub-install would fail in the target" >&2
+    exit 1
+fi
+echo "OK: real grub-install present and $(ls /usr/lib/grub/x86_64-efi/*.mod | wc -l) x86_64-efi modules present"
+
 echo "Diverting grub-install to the VITOS NVRAM-safe wrapper..."
 WRAPPER_SRC=/usr/local/share/vitos/grub-install
-if [ -f "$WRAPPER_SRC" ]; then
-    dpkg-divert --local --rename --add /usr/sbin/grub-install 2>/dev/null || true
-    cp "$WRAPPER_SRC" /usr/sbin/grub-install
-    chmod +x /usr/sbin/grub-install
-    # Sanity: the divert must have produced the real binary at .distrib.
-    if [ ! -x /usr/sbin/grub-install.distrib ]; then
-        echo "WARNING: grub-install.distrib missing after divert — reverting wrapper" >&2
-        dpkg-divert --local --rename --remove /usr/sbin/grub-install 2>/dev/null || true
-    else
-        echo "grub-install wrapper installed (real binary at /usr/sbin/grub-install.distrib)"
-    fi
-else
-    echo "WARNING: $WRAPPER_SRC not found — grub-install wrapper NOT installed" >&2
+if [ ! -f "$WRAPPER_SRC" ]; then
+    echo "FATAL: $WRAPPER_SRC not found — the grub-install wrapper is missing from includes.chroot" >&2
+    exit 1
 fi
+dpkg-divert --local --rename --add /usr/sbin/grub-install 2>/dev/null || true
+cp "$WRAPPER_SRC" /usr/sbin/grub-install
+chmod +x /usr/sbin/grub-install
+# Sanity: the divert MUST have produced the real binary at .distrib (else the
+# wrapper has nothing to call) and our wrapper MUST be in place. Fail the build
+# rather than ship a non-functional bootloader.
+if [ ! -x /usr/sbin/grub-install.distrib ]; then
+    echo "FATAL: grub-install.distrib missing after divert — wrapper would be non-functional" >&2
+    exit 1
+fi
+if ! grep -q "VITOS grub-install wrapper" /usr/sbin/grub-install; then
+    echo "FATAL: /usr/sbin/grub-install is not the VITOS wrapper after copy" >&2
+    exit 1
+fi
+echo "grub-install wrapper installed (real binary at /usr/sbin/grub-install.distrib)"
 
 # Ensure the post-install fixup script (shipped via includes.chroot) is runnable.
 chmod +x /usr/local/bin/vitos-postinstall 2>/dev/null || true
@@ -917,28 +949,14 @@ EOF
 
 # (vitos-postinstall is shipped via includes.chroot/usr/local/bin/vitos-postinstall)
 
-# Ensure EFI packages are present. grub-efi-amd64-bin provides the
-# /usr/lib/grub/x86_64-efi modules grub-install needs in the target; the
-# *-signed/shim packages enable the Secure-Boot removable path (best-effort).
-for pkg in grub-efi-amd64 grub-efi-amd64-bin efibootmgr grub-common; do
-    if ! dpkg -s "$pkg" >/dev/null 2>&1; then
-        echo "Installing missing EFI package: $pkg"
-        apt-get install -y "$pkg" || true
-    fi
-done
+# Optional Secure-Boot packages enable the signed shim removable path
+# (best-effort; grub-efi + modules were already ensured/verified above).
 for pkg in shim-signed grub-efi-amd64-signed; do
     if ! dpkg -s "$pkg" >/dev/null 2>&1; then
         echo "Installing optional Secure-Boot package: $pkg"
         apt-get install -y "$pkg" || true
     fi
 done
-
-# Verify the modules grub-install depends on actually made it into the image.
-if [ -d /usr/lib/grub/x86_64-efi ] && ls /usr/lib/grub/x86_64-efi/*.mod >/dev/null 2>&1; then
-    echo "OK: /usr/lib/grub/x86_64-efi modules present"
-else
-    echo "WARNING: /usr/lib/grub/x86_64-efi modules MISSING — EFI grub-install will fail" >&2
-fi
 
 cat > "$MODULES/users.conf" << 'EOF'
 ---
