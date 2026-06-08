@@ -1,0 +1,30 @@
+name: verify-firstboot
+
+# Fast, focused proof that vitos-firstboot.sh provisions the admin/student
+# accounts with WORKING, non-expired passwords — the regression guard for the
+# LightDM lockout bug (`chage -d 0` force-expiry the greeter can't resolve).
+#
+# Runs the real firstboot.sh init in a Debian container, then asserts the
+# accounts exist, have correct sudo membership, authenticate via PAM, and are
+# not force-expired. ~1-2 min, vs ~40 min for a full ISO build.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "vitos-v1/packages/vitos-base/usr/lib/vitos/firstboot.sh"
+      - "vitos-v1/tests/verify-firstboot-users.sh"
+      - ".github/workflows/verify-firstboot.yml"
+
+jobs:
+  verify:
+    name: Provision + verify firstboot accounts
+    runs-on: ubuntu-22.04
+    container:
+      image: debian:stable-slim
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run firstboot user verification
+        run: |
+          chmod +x vitos-v1/tests/verify-firstboot-users.sh
+          vitos-v1/tests/verify-firstboot-users.sh
