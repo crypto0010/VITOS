@@ -23,14 +23,22 @@ case "$ACTION" in
     getent group vitos-students >/dev/null || groupadd --system vitos-students
     if ! id admin &>/dev/null; then
       useradd -m -s /bin/bash -G vitos-admins,sudo admin
-      echo 'admin:changeme' | chpasswd
-      chage -d 0 admin
+      echo 'admin:VitosAdmin@2026' | chpasswd
     fi
     if ! id student &>/dev/null; then
       useradd -m -s /bin/bash -G vitos-students student
-      echo 'student:changeme' | chpasswd
-      chage -d 0 student
+      echo 'student:VitosStudent@2026' | chpasswd
     fi
+    # NOTE: we intentionally do NOT run `chage -d 0` here. Expiring the password
+    # forces a change at next login, but the LightDM gtk-greeter cannot complete
+    # the PAM password-change (PAM_NEW_AUTHTOK_REQD) flow — it silently bounces
+    # back to the login screen, so the shipped defaults appear to "not work" and
+    # pam_faillock (deny=5) then locks the account. Instead we nudge rotation via
+    # MOTD. Defaults are documented; rotate them after enrollment.
+    cat > /etc/motd <<'MOTD'
+VITOS lab workstation.
+You are signed in with a SHIPPED DEFAULT password. Change it now:  passwd
+MOTD
     ;;
   consent)
     ensure_db

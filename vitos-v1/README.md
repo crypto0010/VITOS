@@ -49,11 +49,14 @@ Output: `vitos-v1/vitos-v1-YYYYMMDD-amd64.iso` (~8.5 GB).
 
 ## Default credentials (CHANGE IMMEDIATELY)
 
-- `admin` / `changeme` — full sudo
-- `student` / `changeme` — sandboxed, no sudo
+- `admin` / `VitosAdmin@2026` — full sudo
+- `student` / `VitosStudent@2026` — sandboxed, no sudo
 
-Both accounts are forced to change password on first login. `vitos-sso` replaces
-them with FreeIPA on a successful realm join.
+These are documented defaults created at first boot by `vitos-firstboot.service`.
+A login MOTD reminds users to run `passwd` and rotate them. We deliberately do
+**not** force-expire the password at first login — the LightDM greeter cannot
+complete the PAM password-change flow and would otherwise lock users out.
+`vitos-sso` replaces these local accounts with FreeIPA on a successful realm join.
 
 ## Layers
 
