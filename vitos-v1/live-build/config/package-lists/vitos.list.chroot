@@ -26,7 +26,11 @@ grub-common
 grub2-common
 
 # Dependencies (most pulled transitively, listed for clarity)
-firejail
+# NOTE: firejail is intentionally NOT a hard entry here. Kali removed it from
+# kali-rolling on 2026-06-08, and a hard entry aborts the whole ISO build when
+# the package is absent. It is now vendored (live-build/vendor-debs/) and pulled
+# in as a Recommends of vitos-tools, so an upstream removal degrades gracefully
+# (ships without the sandbox) instead of breaking the build.
 auditd
 sqlite3
 nmap

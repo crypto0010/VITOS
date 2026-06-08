@@ -12,6 +12,16 @@ if [ ! -f config/includes.chroot/var/lib/ollama/models/blobs/gemma3-4b-instruct-
   /build/vitos-v1/ollama-blob/fetch-model.sh
 fi
 
+# Stage vendored .debs (packages that have left kali-rolling / Debian-testing —
+# see vendor-debs/README.md) into the live-build local repo. Verified against
+# SHA256SUMS; a checksum mismatch is fatal (we will not bake an unverified .deb).
+if ls vendor-debs/*.deb >/dev/null 2>&1; then
+  mkdir -p config/packages.chroot
+  ( cd vendor-debs && sha256sum -c SHA256SUMS )
+  cp vendor-debs/*.deb config/packages.chroot/
+  echo "Staged vendored .debs: $(ls vendor-debs/*.deb | xargs -n1 basename | tr '\n' ' ')"
+fi
+
 lb clean --purge || true
 ./auto/config
 
