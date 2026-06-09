@@ -14,6 +14,7 @@ set -u
 REPO_ROOT=${1:-$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)}
 INC="$REPO_ROOT/vitos-v1/live-build/config/includes.chroot"
 WRAPPER_SRC="$INC/usr/local/share/vitos/grub-install"
+MKCFG_WRAPPER_SRC="$INC/usr/local/share/vitos/grub-mkconfig"
 POSTINSTALL_SRC="$INC/usr/local/bin/vitos-postinstall"
 
 FAILED=0
@@ -24,8 +25,9 @@ fail() { printf '\033[1;31mFAIL\033[0m %s\n' "$*"; FAILED=$((FAILED+1)); }
 say "Environment"
 . /etc/os-release 2>/dev/null || true
 echo "Distro: ${PRETTY_NAME:-unknown}"
-[ -f "$WRAPPER_SRC" ]     || { echo "wrapper source missing: $WRAPPER_SRC"; exit 2; }
-[ -f "$POSTINSTALL_SRC" ] || { echo "postinstall source missing: $POSTINSTALL_SRC"; exit 2; }
+[ -f "$WRAPPER_SRC" ]       || { echo "wrapper source missing: $WRAPPER_SRC"; exit 2; }
+[ -f "$MKCFG_WRAPPER_SRC" ] || { echo "grub-mkconfig wrapper source missing: $MKCFG_WRAPPER_SRC"; exit 2; }
+[ -f "$POSTINSTALL_SRC" ]   || { echo "postinstall source missing: $POSTINSTALL_SRC"; exit 2; }
 
 say "Install grub-efi + grub-pc + tooling"
 export DEBIAN_FRONTEND=noninteractive
@@ -183,8 +185,9 @@ teardown_esp /boot/efi
 #     fails. This is the guarantee behind error2.jpeg: Calamares aborts the
 #     whole install on a non-zero grub-install, and that abort happens BEFORE
 #     grub-mkconfig runs — so /boot/grub/grub.cfg never gets written. As long as
-#     the wrapper exits 0, Calamares proceeds to grub-mkconfig (grub.cfg gets
-#     created) and to vitos-postinstall (which repairs the ESP). We simulate
+#     the wrapper exits 0, Calamares proceeds to grub-mkconfig — which is ITSELF
+#     wrapped so it can never abort either (see T9/T10) — and then to
+#     vitos-postinstall (which repairs the ESP). We simulate
 #     total failure with a READ-ONLY ESP so all three passes cannot write.
 # ---------------------------------------------------------------------------
 say "T8: wrapper exits 0 even when every EFI strategy fails (no Calamares abort)"
@@ -209,6 +212,79 @@ else
 fi
 umount /mnt/roesp 2>/dev/null || true
 losetup -d "$RLOOP" 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# T9: the live-build hook's divert logic installs the grub-mkconfig wrapper too
+#     (mirrors the grub-install divert in 9200-calamares.hook.chroot)
+# ---------------------------------------------------------------------------
+say "T9: divert installs grub-mkconfig wrapper + creates .distrib"
+cp "$MKCFG_WRAPPER_SRC" /usr/local/share/vitos/grub-mkconfig
+MKCFG_RUNTIME=/usr/local/share/vitos/grub-mkconfig
+if [ -f "$MKCFG_RUNTIME" ]; then
+    dpkg-divert --local --rename --add /usr/sbin/grub-mkconfig >/dev/null 2>&1 || true
+    cp "$MKCFG_RUNTIME" /usr/sbin/grub-mkconfig
+    chmod +x /usr/sbin/grub-mkconfig
+fi
+if [ -x /usr/sbin/grub-mkconfig.distrib ] && grep -q "VITOS grub-mkconfig wrapper" /usr/sbin/grub-mkconfig; then
+    pass "T9 wrapper at /usr/sbin/grub-mkconfig, real binary at .distrib"
+else
+    fail "T9 divert/copy did not install the grub-mkconfig wrapper correctly"
+fi
+
+# ---------------------------------------------------------------------------
+# T10: the bootloader module's SECOND command (grub-mkconfig -o
+#      /boot/grub/grub.cfg) can NEVER abort the install. This is the exact
+#      failure in VITOS Error.mp4: grub-install passes, then grub-mkconfig
+#      returns error code 1 and Calamares shows "Installation Failed". The
+#      wrapper must always exit 0 AND leave a grub.cfg with a real menuentry.
+# ---------------------------------------------------------------------------
+say "T10: grub-mkconfig wrapper exits 0 + writes a valid grub.cfg (no Calamares abort)"
+# Stage a realistic boot dir on a REAL ext4 loop fs, so the fallback has a kernel
+# to reference and findmnt/blkid yield a UUID.
+rm -f /tmp/t10root.img; truncate -s 64M /tmp/t10root.img
+i=12; while [ $i -lt 16 ]; do [ -e /dev/loop$i ] || mknod -m660 /dev/loop$i b 7 $i 2>/dev/null || true; i=$((i+1)); done
+mkfs.ext4 -F -q /tmp/t10root.img
+T10LOOP=$(losetup --find --show /tmp/t10root.img)
+mkdir -p /mnt/t10root; mount "$T10LOOP" /mnt/t10root
+mkdir -p /mnt/t10root/boot
+: > /mnt/t10root/boot/vmlinuz-9.9.9-vitos
+: > /mnt/t10root/boot/initrd.img-9.9.9-vitos
+T10UUID=$(blkid -s UUID -o value "$T10LOOP" 2>/dev/null)
+T10OUT=/mnt/t10root/boot/grub/grub.cfg
+
+# T10a/b: real grub-mkconfig present. In this container it fails on the overlayfs
+# root (grub-probe cannot canonicalize it) — exactly like it fails on lab
+# hardware. The wrapper must still exit 0 with a valid grub.cfg.
+: > /var/log/vitos-grub-mkconfig.log 2>/dev/null || true
+PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-mkconfig -o "$T10OUT" >/tmp/t10a.log 2>&1
+T10A_RC=$?
+echo "grub-mkconfig wrapper exit code: $T10A_RC"
+[ "$T10A_RC" -eq 0 ] && pass "T10a wrapper returned 0 (Calamares would NOT abort)" || fail "T10a wrapper returned $T10A_RC"
+{ [ -s "$T10OUT" ] && grep -q '^[[:space:]]*menuentry' "$T10OUT"; } \
+    && pass "T10b grub.cfg written with a menuentry" || fail "T10b grub.cfg missing or has no menuentry"
+
+# T10c/d/e: force the real binary unavailable — deterministically exercises the
+# hand-written fallback and proves it is well-formed and pins the staged kernel.
+rm -f "$T10OUT"
+mv /usr/sbin/grub-mkconfig.distrib /usr/sbin/grub-mkconfig.distrib.hidden
+: > /var/log/vitos-grub-mkconfig.log 2>/dev/null || true
+PATH="/usr/sbin:/usr/bin:/sbin:/bin" grub-mkconfig -o "$T10OUT" >/tmp/t10c.log 2>&1
+T10C_RC=$?
+mv /usr/sbin/grub-mkconfig.distrib.hidden /usr/sbin/grub-mkconfig.distrib
+[ "$T10C_RC" -eq 0 ] && pass "T10c fallback path returned 0" || fail "T10c fallback path returned $T10C_RC"
+if grep -q 'vmlinuz-9.9.9-vitos' "$T10OUT" 2>/dev/null; then
+    pass "T10d fallback grub.cfg references the staged kernel"
+else
+    fail "T10d fallback grub.cfg did not reference the staged kernel"
+fi
+if [ -n "$T10UUID" ] && grep -q "$T10UUID" "$T10OUT" 2>/dev/null; then
+    pass "T10e fallback grub.cfg pins the root fs UUID ($T10UUID)"
+else
+    echo "note: T10e root UUID not embedded (findmnt/blkid unavailable here) — fallback used search --file"
+fi
+echo "--- grub-mkconfig wrapper log ---"; cat /var/log/vitos-grub-mkconfig.log 2>/dev/null || true
+umount /mnt/t10root 2>/dev/null || true
+losetup -d "$T10LOOP" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 say "SUMMARY"

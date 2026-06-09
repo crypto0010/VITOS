@@ -13,6 +13,7 @@ on:
   push:
     paths:
       - "vitos-v1/live-build/config/includes.chroot/usr/local/share/vitos/grub-install"
+      - "vitos-v1/live-build/config/includes.chroot/usr/local/share/vitos/grub-mkconfig"
       - "vitos-v1/tests/verify-bootloader.sh"
       - ".github/workflows/verify-bootloader.yml"
 

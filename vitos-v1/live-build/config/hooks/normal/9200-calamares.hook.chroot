@@ -903,6 +903,41 @@ if ! grep -q "VITOS grub-install wrapper" /usr/sbin/grub-install; then
 fi
 echo "grub-install wrapper installed (real binary at /usr/sbin/grub-install.distrib)"
 
+# ── grub-mkconfig interception via dpkg-divert ──────────────
+# The bootloader module's SECOND command is `grub-mkconfig -o /boot/grub/grub.cfg`,
+# run AFTER grub-install. Calamares aborts the whole install if it returns
+# non-zero — the failure captured in VITOS Error.mp4 ("...the installation command
+# grub-mkconfig -o /boot/grub/grub.cfg returned error code 1"). grub-mkconfig
+# commonly exits non-zero on real hardware/VMs (grub-probe cannot canonicalize a
+# device, or os-prober errors while scanning other disks) even when a perfectly
+# bootable config could be produced. The grub-install wrapper does NOT cover this:
+# it is a separate command. We divert grub-mkconfig to a wrapper that keeps any
+# valid grub.cfg the real command wrote, else hand-writes a bootable one, and
+# ALWAYS exits 0 — mirroring the grub-install wrapper above. The wrapper is a
+# committed, separately-tested file exercised by verify-bootloader.yml.
+echo "Diverting grub-mkconfig to the VITOS never-abort wrapper..."
+if [ ! -x /usr/sbin/grub-mkconfig ]; then
+    echo "FATAL: /usr/sbin/grub-mkconfig absent after installing grub-common — cannot guarantee grub.cfg" >&2
+    exit 1
+fi
+MKCFG_WRAPPER_SRC=/usr/local/share/vitos/grub-mkconfig
+if [ ! -f "$MKCFG_WRAPPER_SRC" ]; then
+    echo "FATAL: $MKCFG_WRAPPER_SRC not found — the grub-mkconfig wrapper is missing from includes.chroot" >&2
+    exit 1
+fi
+dpkg-divert --local --rename --add /usr/sbin/grub-mkconfig 2>/dev/null || true
+cp "$MKCFG_WRAPPER_SRC" /usr/sbin/grub-mkconfig
+chmod +x /usr/sbin/grub-mkconfig
+if [ ! -x /usr/sbin/grub-mkconfig.distrib ]; then
+    echo "FATAL: grub-mkconfig.distrib missing after divert — wrapper would be non-functional" >&2
+    exit 1
+fi
+if ! grep -q "VITOS grub-mkconfig wrapper" /usr/sbin/grub-mkconfig; then
+    echo "FATAL: /usr/sbin/grub-mkconfig is not the VITOS wrapper after copy" >&2
+    exit 1
+fi
+echo "grub-mkconfig wrapper installed (real binary at /usr/sbin/grub-mkconfig.distrib)"
+
 # Ensure the post-install fixup script (shipped via includes.chroot) is runnable.
 chmod +x /usr/local/bin/vitos-postinstall 2>/dev/null || true
 

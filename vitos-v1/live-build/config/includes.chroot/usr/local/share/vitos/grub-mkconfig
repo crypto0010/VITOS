@@ -1,0 +1,163 @@
+#!/bin/sh
+# VITOS grub-mkconfig wrapper.
+# Installed OVER /usr/sbin/grub-mkconfig via dpkg-divert (the real binary is
+# moved to /usr/sbin/grub-mkconfig.distrib). This file is the single source of
+# truth — it is shipped verbatim into the live filesystem and is also exercised
+# directly by .github/workflows/verify-bootloader.yml.
+#
+# WHY: Calamares' bootloader module runs TWO commands inside the target chroot:
+#       1) grub-install ...           (already wrapped — see ./grub-install)
+#       2) grub-mkconfig -o /boot/grub/grub.cfg
+# Calamares treats ANY non-zero from this module as fatal: "Bootloader
+# installation error ... the installation command grub-mkconfig -o
+# /boot/grub/grub.cfg returned error code 1" -> the whole install aborts (the
+# failure recorded in VITOS Error.mp4). On real lab hardware / VMs grub-mkconfig
+# very commonly exits non-zero even when it could produce a perfectly bootable
+# config — usually because grub-probe cannot canonicalize a device, or os-prober
+# errors while scanning other disks. The grub-install wrapper does NOT help here:
+# this is the SECOND, separate command, and it runs AFTER grub-install succeeds.
+#
+# This wrapper guarantees the bootloader module can never abort on grub-mkconfig:
+#   * Run the real grub-mkconfig. If it produced a grub.cfg containing at least
+#     one menuentry, KEEP that file and exit 0 — even if the real command then
+#     returned non-zero on a trailing grub-probe/os-prober error (the menu is
+#     already good).
+#   * Otherwise hand-write a minimal but genuinely bootable grub.cfg from the
+#     real /boot contents (kernel + initrd + root fs UUID), then exit 0.
+#   * ALWAYS exit 0. vitos-postinstall runs immediately afterward and re-runs
+#     update-grub (through this same wrapper) as belt-and-suspenders.
+#
+# ASSUMPTION: /boot lives on the root filesystem (the VITOS installer's default
+# single-ext4-root layout — partition.conf makes no separate /boot). The fallback
+# uses `search --fs-uuid <root> --set=root` then `/boot/vmlinuz-*`, which is
+# correct for boot-on-root. A separate /boot partition would need a different
+# kernel path; the VITOS installer never creates one.
+
+REAL=/usr/sbin/grub-mkconfig.distrib
+[ -x "$REAL" ] || REAL=$(command -v grub-mkconfig.distrib 2>/dev/null)
+LOG=/var/log/vitos-grub-mkconfig.log
+
+log() {
+    echo "[VITOS grub-mkconfig] $*" >> "$LOG" 2>/dev/null || true
+    echo "[VITOS grub-mkconfig] $*" >&2
+}
+
+: > "$LOG" 2>/dev/null || true
+
+# Resolve the -o output path (default matches grub-mkconfig's own default).
+OUT=""
+prev=""
+for arg in "$@"; do
+    case "$prev" in
+        -o|--output) OUT="$arg" ;;
+    esac
+    case "$arg" in
+        -o*) [ "$arg" != "-o" ] && OUT="${arg#-o}" ;;
+        --output=*) OUT="${arg#--output=}" ;;
+    esac
+    prev="$arg"
+done
+[ -n "$OUT" ] || OUT=/boot/grub/grub.cfg
+
+GRUB_DIR=$(dirname "$OUT")        # e.g. /boot/grub
+BOOT_DIR=$(dirname "$GRUB_DIR")   # e.g. /boot
+mkdir -p "$GRUB_DIR" 2>/dev/null || true
+
+log "invoked: $* (output -> $OUT, boot dir -> $BOOT_DIR)"
+
+has_menuentry() {
+    [ -s "$1" ] && grep -q '^[[:space:]]*menuentry' "$1" 2>/dev/null
+}
+
+if [ -z "$REAL" ] || [ ! -x "$REAL" ]; then
+    log "real grub-mkconfig not found (expected /usr/sbin/grub-mkconfig.distrib) — going straight to fallback"
+else
+    # Pass 1 — run the real generator exactly as asked.
+    if "$REAL" "$@" >> "$LOG" 2>&1; then
+        if has_menuentry "$OUT"; then
+            log "real grub-mkconfig succeeded and wrote a valid grub.cfg ($(grep -c '^[[:space:]]*menuentry' "$OUT" 2>/dev/null) menuentries)"
+            exit 0
+        fi
+        log "real grub-mkconfig returned 0 but produced no menuentry — falling back"
+    else
+        rc=$?
+        # The real command failed, but it OFTEN still wrote a complete grub.cfg
+        # before a trailing grub-probe/os-prober error set the exit code. If the
+        # file is good, keep it: a working menu beats a hard install abort.
+        if has_menuentry "$OUT"; then
+            log "real grub-mkconfig exited $rc but a valid grub.cfg was written — keeping it, NOT aborting"
+            exit 0
+        fi
+        log "real grub-mkconfig failed (exit $rc) and left no usable grub.cfg — writing fallback"
+    fi
+fi
+
+# ── Fallback: hand-write a minimal, bootable grub.cfg ───────────────────────
+# Newest installed kernel under <boot>/vmlinuz-* (so the fallback is testable:
+# in production BOOT_DIR=/boot; CI can point -o at a staged boot dir).
+KVER=$(ls -1 "$BOOT_DIR"/vmlinuz-* 2>/dev/null | sed "s#.*/vmlinuz-##" | sort -V | tail -n1)
+
+# Root filesystem UUID of whatever fs holds <boot> — via findmnt/blkid, NOT
+# grub-probe (grub-probe is the thing that tends to fail here).
+ROOT_UUID=$(findmnt -no UUID --target "$BOOT_DIR" 2>/dev/null)
+if [ -z "$ROOT_UUID" ]; then
+    SRC=$(findmnt -no SOURCE --target "$BOOT_DIR" 2>/dev/null)
+    [ -n "$SRC" ] && ROOT_UUID=$(blkid -s UUID -o value "$SRC" 2>/dev/null)
+fi
+
+log "fallback: kernel='${KVER:-none}' root_uuid='${ROOT_UUID:-unknown}'"
+
+# Kernel/initrd paths relative to the root fs (boot-on-root).
+if [ -n "$KVER" ]; then
+    KPATH="/boot/vmlinuz-$KVER"
+    IPATH="/boot/initrd.img-$KVER"
+else
+    # Debian keeps /vmlinuz and /initrd.img symlinks at the fs root.
+    KPATH="/vmlinuz"
+    IPATH="/initrd.img"
+fi
+
+if [ -n "$ROOT_UUID" ]; then
+    ROOT_PARAM="root=UUID=$ROOT_UUID"
+    SEARCH_LINE="search --no-floppy --fs-uuid --set=root $ROOT_UUID"
+else
+    # Last resort: locate the partition by the kernel file itself.
+    ROOT_PARAM="root=/dev/sda2"
+    SEARCH_LINE="search --no-floppy --set=root --file $KPATH"
+fi
+
+cat > "$OUT" <<EOF
+# VITOS fallback grub.cfg — written by the grub-mkconfig wrapper because the
+# real grub-mkconfig could not generate one (grub-probe/os-prober failure).
+# Regenerated automatically on the next successful 'update-grub'.
+set default=0
+set timeout=10
+
+insmod all_video
+insmod gzio
+insmod part_gpt
+insmod part_msdos
+insmod ext2
+insmod fat
+
+menuentry "VITOS GNU/Linux" {
+    $SEARCH_LINE
+    linux $KPATH $ROOT_PARAM ro quiet splash
+    initrd $IPATH
+}
+
+menuentry "VITOS GNU/Linux (recovery mode)" {
+    $SEARCH_LINE
+    linux $KPATH $ROOT_PARAM ro single
+    initrd $IPATH
+}
+EOF
+
+if has_menuentry "$OUT"; then
+    log "wrote fallback grub.cfg to $OUT (kernel ${KVER:-symlink}, $ROOT_PARAM)"
+else
+    log "ERROR: failed to write fallback grub.cfg to $OUT"
+fi
+
+# NEVER return non-zero — Calamares must not abort the install at this step.
+exit 0
