@@ -75,3 +75,8 @@ materia-gtk-theme
 papirus-icon-theme
 xfce4-screensaver
 xscreensaver-data-extra
+
+# VITOS AI ask bar — prompt (rofi) + answer dialog (yad). vitos-ask falls back
+# to zenity/stdin if absent, so these never block the build.
+rofi
+yad
