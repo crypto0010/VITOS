@@ -23,6 +23,12 @@ on:
       - "vitos-v1/packages/vitos-tools/usr/share/desktop-directories/vitos-about.directory"
       - "vitos-v1/packages/vitos-tools/etc/xdg/menus/**"
       - "website/index.html"
+      - "vitos-v1/branding/build-branding.sh"
+      - "vitos-v1/packages/vitos-base/usr/share/plymouth/themes/vitos/**"
+      - "vitos-v1/packages/vitos-tools/usr/bin/vitos-theme"
+      - "vitos-v1/packages/vitos-tools/usr/share/desktop-directories/**"
+      - "vitos-v1/live-build/config/includes.chroot/etc/skel/.config/xfce4/**"
+      - "vitos-v1/live-build/config/package-lists/vitos.list.chroot"
       - "vitos-v1/tests/verify-branding.sh"
       - ".github/workflows/verify-branding.yml"
 
