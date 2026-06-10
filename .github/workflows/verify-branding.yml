@@ -1,0 +1,40 @@
+name: verify-branding
+
+# Fast proof that the VITOS identity rebrand (os-release/lsb-release/issue/motd,
+# dashboard About) carries no "Kali" version string and that the credits surfaces
+# stay in sync with the website team list. Runs in a Kali container (matching the
+# ISO base). ~2-4 min, vs ~40 min for a full ISO build.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "vitos-v1/live-build/config/includes.chroot/usr/lib/os-release"
+      - "vitos-v1/live-build/config/includes.chroot/etc/os-release"
+      - "vitos-v1/live-build/config/includes.chroot/etc/lsb-release"
+      - "vitos-v1/live-build/config/includes.chroot/etc/issue"
+      - "vitos-v1/live-build/config/includes.chroot/etc/issue.net"
+      - "vitos-v1/live-build/config/includes.chroot/etc/motd"
+      - "vitos-v1/packages/vitos-dashboard/web/src/pages/About.tsx"
+      - "vitos-v1/packages/vitos-tools/usr/share/vitos/about/**"
+      - "vitos-v1/packages/vitos-tools/usr/bin/vitos-credits"
+      - "vitos-v1/packages/vitos-tools/usr/share/applications/vitos-about.desktop"
+      - "vitos-v1/packages/vitos-tools/usr/share/applications/vitos-credits.desktop"
+      - "vitos-v1/packages/vitos-tools/usr/share/desktop-directories/vitos-about.directory"
+      - "vitos-v1/packages/vitos-tools/etc/xdg/menus/**"
+      - "website/index.html"
+      - "vitos-v1/tests/verify-branding.sh"
+      - ".github/workflows/verify-branding.yml"
+
+jobs:
+  verify:
+    name: Validate identity + credits
+    runs-on: ubuntu-22.04
+    container:
+      image: kalilinux/kali-rolling
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run branding verification
+        run: |
+          chmod +x vitos-v1/tests/verify-branding.sh
+          vitos-v1/tests/verify-branding.sh "$GITHUB_WORKSPACE"
