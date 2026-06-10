@@ -1,0 +1,30 @@
+#!/bin/sh
+# VITOS wallpaper enforcement — run from /etc/xdg/autostart on XFCE login.
+# Forces the VITOS wallpaper on every backdrop property xfconf knows about
+# (overrides any stale Kali value left in a per-user xfconf db). Idempotent.
+WP=/usr/share/vitos/branding/wallpaper.png
+[ -f "$WP" ] || exit 0
+command -v xfconf-query >/dev/null 2>&1 || exit 0
+
+# Update every existing backdrop image property to the VITOS wallpaper.
+xfconf-query -c xfce4-desktop -l 2>/dev/null \
+  | grep -E '/backdrop/.*/(last-image|image-path)$' \
+  | while read -r prop; do
+        xfconf-query -c xfce4-desktop -p "$prop" -s "$WP" 2>/dev/null || true
+    done
+
+# Ensure at least the primary monitor is set even on a fresh profile.
+xfconf-query -c xfce4-desktop \
+  -p /backdrop/screen0/monitor0/workspace0/last-image -s "$WP" 2>/dev/null \
+  || xfconf-query -c xfce4-desktop \
+       -p /backdrop/screen0/monitor0/workspace0/last-image -n -t string -s "$WP" 2>/dev/null \
+  || true
+
+# Zoomed style (5) wherever an image-style property exists.
+xfconf-query -c xfce4-desktop -l 2>/dev/null \
+  | grep -E '/backdrop/.*/image-style$' \
+  | while read -r prop; do
+        xfconf-query -c xfce4-desktop -p "$prop" -s 5 2>/dev/null || true
+    done
+
+exit 0

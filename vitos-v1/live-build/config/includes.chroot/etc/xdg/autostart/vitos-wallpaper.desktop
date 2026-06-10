@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS Wallpaper
+Comment=Apply the VITOS desktop wallpaper
+Exec=/usr/local/bin/vitos-set-wallpaper
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-XFCE-Autostart-Override=true
