@@ -1,0 +1,42 @@
+#!/bin/sh
+# VITOS terminal credits — prints the team, Special Thanks, and the punchline.
+# Shipped in vitos-tools; launched by vitos-credits.desktop (Terminal=true) and
+# runnable directly. Pure POSIX sh + ANSI color (degrades to plain text).
+set -u
+
+C=''; M=''; D=''; R=''
+if [ -t 1 ]; then C='\033[1;36m'; M='\033[1;35m'; D='\033[2m'; R='\033[0m'; fi
+
+printf "%b" "$C"
+cat <<'BANNER'
+ __     __ ___ _____  ___   ____
+ \ \   / /|_ _|_   _|/ _ \ / ___|
+  \ \ / /  | |  | |  | | | |\___ \
+   \ V /   | |  | |  | |_| | ___) |
+    \_/   |___| |_|   \___/ |____/
+BANNER
+printf "%b" "$R"
+
+printf "  ${C}VITOS v1.0.2${R} — VIT Operating System for Cybersecurity\n"
+printf "  ${M}Designed at VIT Bhopal for VITians${R}\n"
+printf "  ${D}Designed and developed at VIT Bhopal — Cybersecurity and Digital Forensics Lab${R}\n\n"
+
+printf "  ${C}== Project Leadership ==${R}\n"
+printf "  Project Director ............ Dr. Hemraj Shobharam Lamkuche\n"
+printf "  Chief Mentor ................ Dr. Pon Harshavardhanan\n"
+printf "  Division Head (CDF) ......... Dr. Saravanan D.\n\n"
+
+printf "  ${C}== Contributing Team ==${R}\n"
+for n in \
+  "Matrupriya Dibyanshu Panda" "Spandan Gope" "Bharat Raghuvanshi" \
+  "Mayank Singh Bhadouria" "Advait Sahu" "Aayushman Arora" "Harsh Singh" \
+  "Satyanarayana Murthy V" "Ravi Shankar" "Agnibha" "Leonardo" "Mannat Pal" \
+  "Ambika" "Rashmi" "Nahal" "Piyush" "Krishno"; do
+    printf "   • %s\n" "$n"
+done
+printf "\n"
+
+printf "  ${C}== Special Thanks ==${R}\n"
+printf "  Hon'ble Ms. Kadhambari S. Viswanathan — for her support.\n\n"
+
+printf "  ${D}© 2026 VIT Bhopal University${R}\n"

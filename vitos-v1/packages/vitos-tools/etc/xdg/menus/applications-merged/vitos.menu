@@ -25,4 +25,15 @@
       </And>
     </Include>
   </Menu>
+
+  <!-- VITOS · About -->
+  <Menu>
+    <Name>VITOS About</Name>
+    <Directory>vitos-about.directory</Directory>
+    <Include>
+      <And>
+        <Category>X-VITOS-About</Category>
+      </And>
+    </Include>
+  </Menu>
 </Menu>
