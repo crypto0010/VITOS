@@ -69,6 +69,39 @@ has_menuentry() {
     [ -s "$1" ] && grep -q '^[[:space:]]*menuentry' "$1" 2>/dev/null
 }
 
+# ── Force os-prober OFF before generating (the manually-proven fix) ──────────
+# os-prober scanning the machine's OTHER disks (here: Windows on /dev/sda + stale
+# Kali remnants) is the #1 reason the REAL grub-mkconfig misbehaves on lab
+# hardware — it either exits non-zero on a probe error, or pollutes the menu with
+# foreign/stale entries so the box boots an old Kali GRUB instead of VITOS. The
+# fix proven by hand (see grub_fix.pdf) was, from inside the target:
+#       echo 'GRUB_DISABLE_OS_PROBER=true' >> /etc/default/grub
+#       grub-mkconfig -o /boot/grub/grub.cfg      # then succeeded: 8 menuentries
+# Calamares' grubcfg module rewrites /etc/default/grub IMMEDIATELY before this
+# wrapper runs, and the /etc/default/grub.d/ drop-in proved NOT to be honoured in
+# the field (the installed /etc/default/grub still showed os-prober commented),
+# so /etc/default/grub itself is the only reliable place. We assert it here, at
+# the exact moment the manual fix did, so the real grub-mkconfig produces the
+# full, clean VITOS menu instead of erroring (or falling back to our minimal cfg).
+# Idempotent: drop any prior (commented or active) line, then append the canonical
+# one as the last word.
+GRUB_DEFAULT_FILE=${VITOS_GRUB_DEFAULT_FILE:-/etc/default/grub}
+if [ -f "$GRUB_DEFAULT_FILE" ]; then
+    if grep -q '^GRUB_DISABLE_OS_PROBER=true$' "$GRUB_DEFAULT_FILE" 2>/dev/null; then
+        log "GRUB_DISABLE_OS_PROBER=true already set in $GRUB_DEFAULT_FILE"
+    else
+        sed -i '/GRUB_DISABLE_OS_PROBER/d' "$GRUB_DEFAULT_FILE" 2>/dev/null || true
+        if printf '%s\n' 'GRUB_DISABLE_OS_PROBER=true' >> "$GRUB_DEFAULT_FILE" 2>/dev/null; then
+            log "forced GRUB_DISABLE_OS_PROBER=true in $GRUB_DEFAULT_FILE (os-prober off — proven fix)"
+        else
+            log "WARNING: could not write $GRUB_DEFAULT_FILE (read-only?) — relying on env + grub.d drop-in"
+        fi
+    fi
+fi
+# Belt-and-suspenders for the corner where the file could not be written: grub
+# also honours this variable from the environment of the grub-mkconfig process.
+export GRUB_DISABLE_OS_PROBER=true
+
 if [ -z "$REAL" ] || [ ! -x "$REAL" ]; then
     log "real grub-mkconfig not found (expected /usr/sbin/grub-mkconfig.distrib) — going straight to fallback"
 else
@@ -99,10 +132,10 @@ KVER=$(ls -1 "$BOOT_DIR"/vmlinuz-* 2>/dev/null | sed "s#.*/vmlinuz-##" | sort -V
 
 # Root filesystem UUID of whatever fs holds <boot> — via findmnt/blkid, NOT
 # grub-probe (grub-probe is the thing that tends to fail here).
+ROOT_SRC=$(findmnt -no SOURCE --target "$BOOT_DIR" 2>/dev/null)
 ROOT_UUID=$(findmnt -no UUID --target "$BOOT_DIR" 2>/dev/null)
-if [ -z "$ROOT_UUID" ]; then
-    SRC=$(findmnt -no SOURCE --target "$BOOT_DIR" 2>/dev/null)
-    [ -n "$SRC" ] && ROOT_UUID=$(blkid -s UUID -o value "$SRC" 2>/dev/null)
+if [ -z "$ROOT_UUID" ] && [ -n "$ROOT_SRC" ]; then
+    ROOT_UUID=$(blkid -s UUID -o value "$ROOT_SRC" 2>/dev/null)
 fi
 
 log "fallback: kernel='${KVER:-none}' root_uuid='${ROOT_UUID:-unknown}'"
@@ -120,9 +153,15 @@ fi
 if [ -n "$ROOT_UUID" ]; then
     ROOT_PARAM="root=UUID=$ROOT_UUID"
     SEARCH_LINE="search --no-floppy --fs-uuid --set=root $ROOT_UUID"
+elif [ -n "$ROOT_SRC" ]; then
+    # No UUID, but we know the actual device holding /boot — use it. NEVER guess
+    # a device like /dev/sda2: on a multi-OS lab box that is the Windows disk.
+    ROOT_PARAM="root=$ROOT_SRC"
+    SEARCH_LINE="search --no-floppy --set=root --file $KPATH"
 else
-    # Last resort: locate the partition by the kernel file itself.
-    ROOT_PARAM="root=/dev/sda2"
+    # Nothing resolvable: locate the partition by the kernel file and point root=
+    # at the VITOS filesystem label rather than any hardcoded disk.
+    ROOT_PARAM="root=/dev/disk/by-label/VITOS"
     SEARCH_LINE="search --no-floppy --set=root --file $KPATH"
 fi
 
