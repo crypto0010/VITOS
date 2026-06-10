@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS Theme — Neon (cyan)
+Comment=Apply the VITOS neon look (theme, icons, wallpaper)
+Exec=vitos-theme neon
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=X-VITOS-Theme;
+Keywords=theme;appearance;vitos;neon;

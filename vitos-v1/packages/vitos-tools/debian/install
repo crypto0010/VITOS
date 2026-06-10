@@ -39,3 +39,8 @@ usr/share/vitos/about/vitos-about.html                 usr/share/vitos/about
 usr/share/applications/vitos-about.desktop             usr/share/applications
 usr/share/applications/vitos-credits.desktop           usr/share/applications
 usr/share/desktop-directories/vitos-about.directory    usr/share/desktop-directories
+usr/bin/vitos-theme                                    usr/bin
+usr/share/applications/vitos-theme-neon.desktop        usr/share/applications
+usr/share/applications/vitos-theme-matrix.desktop      usr/share/applications
+usr/share/applications/vitos-theme-stealth.desktop     usr/share/applications
+usr/share/desktop-directories/vitos-themes.directory   usr/share/desktop-directories
