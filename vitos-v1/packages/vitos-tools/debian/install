@@ -44,3 +44,5 @@ usr/share/applications/vitos-theme-neon.desktop        usr/share/applications
 usr/share/applications/vitos-theme-matrix.desktop      usr/share/applications
 usr/share/applications/vitos-theme-stealth.desktop     usr/share/applications
 usr/share/desktop-directories/vitos-themes.directory   usr/share/desktop-directories
+usr/bin/vitos-ask                                      usr/bin
+usr/share/applications/vitos-ask.desktop               usr/share/applications
