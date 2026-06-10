@@ -1,30 +1,32 @@
 #!/bin/sh
 # VITOS wallpaper enforcement — run from /etc/xdg/autostart on XFCE login.
-# Forces the VITOS wallpaper on every backdrop property xfconf knows about
-# (overrides any stale Kali value left in a per-user xfconf db). Idempotent.
+# Replaces a stale *Kali* backdrop with the VITOS wallpaper, but never clobbers
+# a VITOS wallpaper the user picked via vitos-theme: any image already under
+# /usr/share/vitos/branding/ is left as-is. Idempotent.
 WP=/usr/share/vitos/branding/wallpaper.png
+VITOS_DIR=/usr/share/vitos/branding/
 [ -f "$WP" ] || exit 0
 command -v xfconf-query >/dev/null 2>&1 || exit 0
 
-# Update every existing backdrop image property to the VITOS wallpaper.
+# Replace only NON-VITOS backdrop images (i.e. leftover Kali defaults); leave any
+# VITOS variant (wallpaper.png / wallpaper-matrix.png / wallpaper-stealth.png)
+# the user selected via vitos-theme untouched.
 xfconf-query -c xfce4-desktop -l 2>/dev/null \
   | grep -E '/backdrop/.*/(last-image|image-path)$' \
   | while read -r prop; do
-        xfconf-query -c xfce4-desktop -p "$prop" -s "$WP" 2>/dev/null || true
+        cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null || true)
+        case "$cur" in
+            "$VITOS_DIR"*) : ;;   # already a VITOS wallpaper — keep the choice
+            *) xfconf-query -c xfce4-desktop -p "$prop" -s "$WP" 2>/dev/null || true ;;
+        esac
     done
 
-# Ensure at least the primary monitor is set even on a fresh profile.
-xfconf-query -c xfce4-desktop \
-  -p /backdrop/screen0/monitor0/workspace0/last-image -s "$WP" 2>/dev/null \
-  || xfconf-query -c xfce4-desktop \
-       -p /backdrop/screen0/monitor0/workspace0/last-image -n -t string -s "$WP" 2>/dev/null \
-  || true
-
-# Zoomed style (5) wherever an image-style property exists.
-xfconf-query -c xfce4-desktop -l 2>/dev/null \
-  | grep -E '/backdrop/.*/image-style$' \
-  | while read -r prop; do
-        xfconf-query -c xfce4-desktop -p "$prop" -s 5 2>/dev/null || true
-    done
+# Ensure the primary monitor has a wallpaper on a fresh profile — create only if
+# missing, never overwrite an existing value.
+P=/backdrop/screen0/monitor0/workspace0/last-image
+cur=$(xfconf-query -c xfce4-desktop -p "$P" 2>/dev/null || true)
+if [ -z "$cur" ]; then
+    xfconf-query -c xfce4-desktop -p "$P" -n -t string -s "$WP" 2>/dev/null || true
+fi
 
 exit 0
