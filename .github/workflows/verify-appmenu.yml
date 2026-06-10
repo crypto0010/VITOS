@@ -1,0 +1,34 @@
+name: verify-appmenu
+
+# Fast proof that the VITOS application menu (VITOS · Security / VITOS · AI
+# launchers + menu merge) and the desktop wallpaper config are well-formed and
+# stay in sync with the vitos-tools wrapped-tool list. Runs in a Kali container
+# (matching the ISO base). ~2-4 min, vs ~40 min for a full ISO build.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "vitos-v1/packages/vitos-tools/usr/bin/vitos-launch-tool"
+      - "vitos-v1/packages/vitos-tools/usr/share/applications/**"
+      - "vitos-v1/packages/vitos-tools/usr/share/desktop-directories/**"
+      - "vitos-v1/packages/vitos-tools/etc/xdg/menus/**"
+      - "vitos-v1/packages/vitos-tools/debian/postinst"
+      - "vitos-v1/live-build/config/includes.chroot/etc/skel/.config/xfce4/**"
+      - "vitos-v1/live-build/config/includes.chroot/usr/local/bin/vitos-set-wallpaper"
+      - "vitos-v1/live-build/config/includes.chroot/etc/xdg/autostart/vitos-wallpaper.desktop"
+      - "vitos-v1/tests/verify-appmenu.sh"
+      - ".github/workflows/verify-appmenu.yml"
+
+jobs:
+  verify:
+    name: Validate app menu + wallpaper
+    runs-on: ubuntu-22.04
+    container:
+      image: kalilinux/kali-rolling
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run app-menu verification
+        run: |
+          chmod +x vitos-v1/tests/verify-appmenu.sh
+          vitos-v1/tests/verify-appmenu.sh "$GITHUB_WORKSPACE"
