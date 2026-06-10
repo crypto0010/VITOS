@@ -287,6 +287,50 @@ umount /mnt/t10root 2>/dev/null || true
 losetup -d "$T10LOOP" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
+# T11: the grub-mkconfig wrapper must reproduce the manually-proven fix —
+#      assert GRUB_DISABLE_OS_PROBER=true in /etc/default/grub BEFORE generating.
+#      In the field (grub_fix.pdf) os-prober scanning Windows + stale Kali made
+#      the real grub-mkconfig misbehave; adding this single line to
+#      /etc/default/grub and regenerating produced the clean 8-entry VITOS menu.
+#      The wrapper now does that step itself (the /etc/default/grub.d drop-in was
+#      NOT honoured in the field). Uses the VITOS_GRUB_DEFAULT_FILE test hook so
+#      the assertion is hermetic and never touches the container's real config.
+# ---------------------------------------------------------------------------
+say "T11: grub-mkconfig wrapper forces GRUB_DISABLE_OS_PROBER=true (the proven fix)"
+T11GRUB=/tmp/t11-default-grub
+T11OUT=/tmp/t11-grub.cfg
+# Simulate exactly the state grub_fix.pdf showed Calamares' grubcfg module leaves
+# behind: os-prober commented out, plus an unrelated setting that must survive.
+printf '%s\n' 'GRUB_TIMEOUT=10' '#GRUB_DISABLE_OS_PROBER=false' > "$T11GRUB"
+VITOS_GRUB_DEFAULT_FILE="$T11GRUB" PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
+    grub-mkconfig -o "$T11OUT" >/tmp/t11.log 2>&1 || true
+if grep -q '^GRUB_DISABLE_OS_PROBER=true$' "$T11GRUB" 2>/dev/null; then
+    pass "T11a wrapper asserted GRUB_DISABLE_OS_PROBER=true in the grub defaults file"
+else
+    fail "T11a wrapper did NOT set GRUB_DISABLE_OS_PROBER=true (os-prober would still run)"
+fi
+if grep -q 'GRUB_DISABLE_OS_PROBER=false' "$T11GRUB" 2>/dev/null \
+   || grep -Eq '^[[:space:]]*#.*GRUB_DISABLE_OS_PROBER' "$T11GRUB" 2>/dev/null; then
+    fail "T11b a stale/commented os-prober line survived — could re-enable os-prober"
+else
+    pass "T11b no stale 'false'/commented os-prober line remains"
+fi
+if grep -q '^GRUB_TIMEOUT=10$' "$T11GRUB" 2>/dev/null; then
+    pass "T11c unrelated GRUB_* settings preserved"
+else
+    fail "T11c clobbered an unrelated GRUB_* setting"
+fi
+# Idempotency: a second run must not accumulate duplicate os-prober lines.
+VITOS_GRUB_DEFAULT_FILE="$T11GRUB" PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
+    grub-mkconfig -o "$T11OUT" >/tmp/t11b.log 2>&1 || true
+T11N=$(grep -c 'GRUB_DISABLE_OS_PROBER' "$T11GRUB" 2>/dev/null || echo 0)
+[ "$T11N" = "1" ] \
+    && pass "T11d idempotent — exactly one GRUB_DISABLE_OS_PROBER line after re-run" \
+    || fail "T11d expected exactly 1 os-prober line, found $T11N"
+echo "--- /etc/default/grub (simulated) after wrapper ---"; cat "$T11GRUB" 2>/dev/null || true
+rm -f "$T11GRUB" "$T11OUT" /tmp/t11.log /tmp/t11b.log
+
+# ---------------------------------------------------------------------------
 say "SUMMARY"
 if [ "$FAILED" -eq 0 ]; then
     printf '\033[1;32mALL CASES PASSED — bootloader fix verified end to end.\033[0m\n'
