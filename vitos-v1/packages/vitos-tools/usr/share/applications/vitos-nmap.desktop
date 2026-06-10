@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Nmap
+Comment=Nmap — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool nmap
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

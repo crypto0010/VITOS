@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Burp Suite
+Comment=Burp Suite — VITOS security tool (sandboxed via vitos-run)
+Exec=/usr/local/bin/burpsuite
+Icon=burpsuite
+Terminal=false
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

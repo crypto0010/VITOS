@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sleuth Kit (fls)
+Comment=Sleuth Kit (fls) — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool fls
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

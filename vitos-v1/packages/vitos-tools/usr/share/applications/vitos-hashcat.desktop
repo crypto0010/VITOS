@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=hashcat
+Comment=hashcat — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool hashcat
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Directory
+Name=VITOS · Security
+Comment=Cybersecurity tools curated for VITOS (sandboxed via vitos-run)
+Icon=security-high

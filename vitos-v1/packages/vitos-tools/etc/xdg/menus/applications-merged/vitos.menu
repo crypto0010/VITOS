@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<Menu>
+  <Name>Xfce</Name>
+
+  <!-- VITOS · Security -->
+  <Menu>
+    <Name>VITOS Security</Name>
+    <Directory>vitos-security.directory</Directory>
+    <Include>
+      <And>
+        <Category>X-VITOS-Security</Category>
+      </And>
+    </Include>
+  </Menu>
+
+  <!-- VITOS · AI -->
+  <Menu>
+    <Name>VITOS AI</Name>
+    <Directory>vitos-ai.directory</Directory>
+    <Include>
+      <And>
+        <Category>X-VITOS-AI</Category>
+      </And>
+    </Include>
+  </Menu>
+</Menu>

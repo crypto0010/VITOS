@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Autopsy
+Comment=Autopsy — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool autopsy --repl
+Icon=web-browser
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

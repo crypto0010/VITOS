@@ -29,4 +29,23 @@ systemctl enable vitos-firstboot.service \
                  vitos-ai.service \
                  lightdm.service || true
 
+# volatility3 — not in Kali main; install via pip so the forensics launcher
+# works fully offline on lab machines (baked into the squashfs at build time).
+# Best-effort: never fail the build (mirrors the firejail-vendoring philosophy).
+# The pip console script is `vol`, but vitos-run dispatches on the name
+# 'volatility3' (the symlink basename), so we also drop a /usr/bin/volatility3
+# shim that execs `vol`.
+if ! command -v vol >/dev/null 2>&1; then
+    pip3 install --break-system-packages volatility3 >/dev/null 2>&1 \
+      || pipx install volatility3 >/dev/null 2>&1 \
+      || echo "WARNING: volatility3 install failed (forensics launcher will report 'not installed')"
+fi
+if command -v vol >/dev/null 2>&1 && [ ! -e /usr/bin/volatility3 ]; then
+    cat > /usr/bin/volatility3 <<'VOL'
+#!/bin/sh
+exec vol "$@"
+VOL
+    chmod +x /usr/bin/volatility3
+fi
+
 passwd -l root || true

@@ -21,6 +21,17 @@ convert -size 1920x1080 \
   -annotate +0+120 'VITOS — Developed by Dr. Hemraj, VIT Bhopal' \
   "$OUT_BASE/lightdm-background.png"
 
+# 1b. XFCE desktop wallpaper — 1920x1080 (VIT logo on the VITOS gradient).
+#     Installed via vitos-base to /usr/share/vitos/branding/wallpaper.png and
+#     referenced by the /etc/skel XFCE backdrop config + vitos-set-wallpaper.
+convert -size 1920x1080 \
+  gradient:"$BG"-"#1a1f4a" \
+  \( "$SRC" -resize 560x -background none -gravity center -extent 560x \) \
+  -gravity center -composite \
+  -gravity south -fill "#9aa4d6" -font DejaVu-Sans -pointsize 26 \
+  -annotate +0+90 'VITOS — VIT Bhopal University' \
+  "$OUT_BASE/wallpaper.png"
+
 # 2. Plymouth boot splash — 1920x1080
 convert -size 1920x1080 xc:"$BG" \
   \( "$SRC" -resize 480x -background none -gravity center -extent 480x \) \

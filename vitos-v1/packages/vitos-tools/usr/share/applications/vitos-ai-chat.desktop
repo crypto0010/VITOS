@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS AI Chat (Gemma 3)
+Comment=Chat with the local Gemma 3 model via Ollama — fully offline
+Exec=vitos-launch-tool ollama --repl
+Icon=applications-science
+Terminal=true
+Categories=X-VITOS-AI;
+Keywords=ai;ollama;gemma;chat;llm;vitos;
