@@ -36,4 +36,15 @@
       </And>
     </Include>
   </Menu>
+
+  <!-- VITOS · Themes -->
+  <Menu>
+    <Name>VITOS Themes</Name>
+    <Directory>vitos-themes.directory</Directory>
+    <Include>
+      <And>
+        <Category>X-VITOS-Theme</Category>
+      </And>
+    </Include>
+  </Menu>
 </Menu>

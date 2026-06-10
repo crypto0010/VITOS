@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS Theme — Stealth (dark)
+Comment=Apply the VITOS stealth look (theme, icons, wallpaper)
+Exec=vitos-theme stealth
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=X-VITOS-Theme;
+Keywords=theme;appearance;vitos;stealth;

@@ -1,0 +1,41 @@
+#!/bin/sh
+# vitos-theme <neon|matrix|stealth> — apply a VITOS look:
+#   GTK theme + icon theme + xfwm4 theme + matching wallpaper, via xfconf-query.
+# Shipped in vitos-tools; invoked by the VITOS · Themes launchers and runnable
+# directly. If a named theme isn't installed, XFCE falls back to a default —
+# this never breaks the desktop.
+#
+# Set VITOS_THEME_TEST=1 to print the resolved preset and exit 0 (CI hook).
+set -u
+
+PRESET="${1:-}"
+case "$PRESET" in
+  neon)    GTK="Arc-Dark";     ICONS="Papirus-Dark"; WM="Arc-Dark";     WP="wallpaper.png" ;;
+  matrix)  GTK="Materia-dark"; ICONS="Papirus-Dark"; WM="Materia-dark"; WP="wallpaper-matrix.png" ;;
+  stealth) GTK="Adwaita-dark"; ICONS="Papirus-Dark"; WM="Adwaita-dark"; WP="wallpaper-stealth.png" ;;
+  ""|-h|--help) echo "usage: vitos-theme <neon|matrix|stealth>" >&2; exit 2 ;;
+  *) echo "vitos-theme: unknown preset '$PRESET'" >&2; exit 2 ;;
+esac
+WPP="/usr/share/vitos/branding/$WP"
+
+if [ "${VITOS_THEME_TEST:-0}" = "1" ]; then
+    echo "PRESET=$PRESET GTK=$GTK ICONS=$ICONS WM=$WM WP=$WPP"
+    exit 0
+fi
+
+command -v xfconf-query >/dev/null 2>&1 || { echo "xfconf-query not found" >&2; exit 1; }
+
+set_str() {  # channel prop value
+    xfconf-query -c "$1" -p "$2" -s "$3" 2>/dev/null \
+      || xfconf-query -c "$1" -p "$2" -n -t string -s "$3" 2>/dev/null || true
+}
+set_str xsettings /Net/ThemeName     "$GTK"
+set_str xsettings /Net/IconThemeName "$ICONS"
+set_str xfwm4     /general/theme     "$WM"
+
+# Apply the matching wallpaper to every existing backdrop.
+xfconf-query -c xfce4-desktop -l 2>/dev/null \
+  | grep -E '/backdrop/.*/last-image$' \
+  | while read -r p; do xfconf-query -c xfce4-desktop -p "$p" -s "$WPP" 2>/dev/null || true; done
+
+echo "Applied VITOS · $PRESET ($GTK / $ICONS)"

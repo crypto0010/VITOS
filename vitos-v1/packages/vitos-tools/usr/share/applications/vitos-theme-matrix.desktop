@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS Theme — Matrix (green)
+Comment=Apply the VITOS matrix look (theme, icons, wallpaper)
+Exec=vitos-theme matrix
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=X-VITOS-Theme;
+Keywords=theme;appearance;vitos;matrix;
