@@ -34,3 +34,8 @@ usr/share/applications/vitos-dashboard.desktop         usr/share/applications
 usr/share/desktop-directories/vitos-security.directory usr/share/desktop-directories
 usr/share/desktop-directories/vitos-ai.directory       usr/share/desktop-directories
 etc/xdg/menus/applications-merged/vitos.menu           etc/xdg/menus/applications-merged
+usr/bin/vitos-credits                                  usr/bin
+usr/share/vitos/about/vitos-about.html                 usr/share/vitos/about
+usr/share/applications/vitos-about.desktop             usr/share/applications
+usr/share/applications/vitos-credits.desktop           usr/share/applications
+usr/share/desktop-directories/vitos-about.directory    usr/share/desktop-directories
