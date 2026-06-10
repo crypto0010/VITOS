@@ -1,0 +1,50 @@
+#!/bin/sh
+# VITOS application launcher helper.
+# Shipped in vitos-tools; invoked by the VITOS · Security / VITOS · AI .desktop
+# launchers (Terminal=true). Keeps the .desktop files trivial and centralizes
+# how security tools open in a terminal.
+#
+# Usage: vitos-launch-tool <tool> [--repl]
+#   <tool>   a name from vitos-tools' wrapped-tool list (resolves to the
+#            sandboxed /usr/local/bin/<tool> -> vitos-run), OR the special
+#            name 'ollama' (the local Gemma 3 chat).
+#   --repl   the tool is interactive (msfconsole, r2, scapy, ...): exec it
+#            directly. Without --repl the tool is a one-shot CLI: print its
+#            --help, then drop into an interactive shell with the wrapped tool
+#            on PATH so the student can run it with arguments.
+#
+# Set VITOS_LAUNCH_TEST=1 to print the resolved plan and exit 0 (used by
+# tests/verify-appmenu.sh — never execs anything).
+set -u
+
+TOOL="${1:-}"
+[ -n "$TOOL" ] || { echo "usage: vitos-launch-tool <tool> [--repl]" >&2; exit 2; }
+shift
+MODE="cli"
+[ "${1:-}" = "--repl" ] && MODE="repl"
+
+case "$TOOL" in
+    ollama) RUN="ollama run vitos-intent"; MODE="repl" ;;
+    *)      RUN="/usr/local/bin/$TOOL" ;;
+esac
+
+if [ "${VITOS_LAUNCH_TEST:-0}" = "1" ]; then
+    echo "TOOL=$TOOL MODE=$MODE RUN=$RUN"
+    exit 0
+fi
+
+printf '\033[1;36m== VITOS · %s ==\033[0m\n' "$TOOL"
+echo "Sandboxed via vitos-run (session telemetry on). Press Ctrl-D or type 'exit' to close."
+echo
+
+if [ "$MODE" = "repl" ]; then
+    # Interactive tool: run it, then leave a shell so the window doesn't vanish.
+    $RUN
+    echo
+    echo "[$TOOL exited — shell ready]"
+else
+    # One-shot CLI: show help, then an interactive shell (wrapped tool on PATH).
+    $RUN --help 2>/dev/null || $RUN -h 2>/dev/null || true
+    echo
+fi
+exec "${SHELL:-/bin/bash}" -i
