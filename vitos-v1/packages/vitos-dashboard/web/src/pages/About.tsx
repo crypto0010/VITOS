@@ -3,11 +3,15 @@ export default function About() {
     <div style={{ maxWidth: 760, lineHeight: 1.6 }}>
       <h2 style={{ color: "#7dd3fc" }}>About VITOS</h2>
       <p>
-        <strong>VITOS</strong> (VIT Operating System for Cybersecurity) is a Kali-based
+        <strong>VITOS v1.0.2</strong> (VIT Operating System for Cybersecurity) is an
         academic security distribution designed and developed at the
         {" "}<strong>Cybersecurity and Digital Forensics Lab, VIT Bhopal University</strong>.
-        It pairs the standard Kali pentesting toolchain with a behavioral-monitoring
-        AI engine, a sandboxed per-student execution model, and a faculty admin console.
+        It pairs a comprehensive pentesting and digital-forensics toolchain with a
+        behavioral-monitoring AI engine, a sandboxed per-student execution model, and a
+        faculty admin console.
+      </p>
+      <p style={{ color: "#7dd3fc", fontStyle: "italic" }}>
+        Designed at VIT Bhopal for VITians
       </p>
 
       <h3 style={{ color: "#facc15" }}>Project leadership</h3>
@@ -37,6 +41,9 @@ export default function About() {
         <li>Piyush</li>
         <li>Krishno</li>
       </ol>
+
+      <h3 style={{ color: "#facc15" }}>Special Thanks</h3>
+      <p>Hon'ble Ms. Kadhambari S. Viswanathan &mdash; for her support.</p>
 
       <h3 style={{ color: "#facc15" }}>Contact</h3>
       <p>
