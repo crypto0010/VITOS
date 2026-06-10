@@ -1,14 +1,45 @@
 Window.SetBackgroundTopColor(0.039, 0.055, 0.165);
-Window.SetBackgroundBottomColor(0.039, 0.055, 0.165);
+Window.SetBackgroundBottomColor(0.020, 0.024, 0.055);
 
 logo.image  = Image("splash.png");
 logo.sprite = Sprite(logo.image);
 logo.sprite.SetX(Window.GetWidth()/2  - logo.image.GetWidth()/2);
 logo.sprite.SetY(Window.GetHeight()/2 - logo.image.GetHeight()/2);
 
-progress = 0;
+# Boot progress bar (static box + scaled fill), centered near the bottom.
+box.image = Image("progress-box.png");
+bar.image = Image("progress-bar.png");
+box.sprite = Sprite(box.image);
+bar.sprite = Sprite(bar.image);
+bar_x = Window.GetWidth()/2 - box.image.GetWidth()/2;
+bar_y = Window.GetHeight() * 0.80;
+box.sprite.SetX(bar_x); box.sprite.SetY(bar_y);
+bar.sprite.SetX(bar_x); bar.sprite.SetY(bar_y);
+bar.sprite.SetOpacity(1);
+
+# Sweeping cyber scanline.
+scan.image  = Image("scanline.png");
+scan.sprite = Sprite(scan.image);
+scan.sprite.SetX(0);
+
+# Pulsing tagline.
+tag.image  = Image.Text("Designed at VIT Bhopal for VITians", 0.60, 0.95, 1.0);
+tag.sprite = Sprite(tag.image);
+tag.sprite.SetX(Window.GetWidth()/2 - tag.image.GetWidth()/2);
+tag.sprite.SetY(Window.GetHeight() * 0.86);
+
+tick = 0;
 fun refresh_callback() {
-  progress++;
-  logo.sprite.SetOpacity(0.7 + 0.3 * Math.Sin(progress / 12));
+  tick++;
+  logo.sprite.SetOpacity(0.7 + 0.3 * Math.Sin(tick / 12));
+  tag.sprite.SetOpacity(0.5 + 0.5 * Math.Sin(tick / 18));
+  scan.sprite.SetY((tick * 6) % Window.GetHeight());
 }
 Plymouth.SetRefreshFunction(refresh_callback);
+
+fun progress_callback(duration, progress) {
+  w = box.image.GetWidth() * progress;
+  if (w < 1) w = 1;
+  bar.sprite.SetImage(bar.image.Scale(w, bar.image.GetHeight()));
+}
+Plymouth.SetBootProgressFunction(progress_callback);
