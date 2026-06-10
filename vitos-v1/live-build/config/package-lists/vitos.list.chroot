@@ -71,7 +71,6 @@ autopsy
 # Desktop look & feel (VITOS themes + screensaver lock). All standard
 # Debian/Kali packages; vitos-theme degrades gracefully if any is absent.
 arc-theme
-materia-gtk-theme
 papirus-icon-theme
 xfce4-screensaver
 xscreensaver-data-extra
