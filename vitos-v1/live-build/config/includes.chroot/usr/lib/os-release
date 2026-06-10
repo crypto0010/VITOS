@@ -1,0 +1,14 @@
+NAME="VITOS"
+PRETTY_NAME="VITOS — VIT Bhopal"
+ID=vitos
+ID_LIKE=debian
+VERSION="1.0.2"
+VERSION_ID="1.0.2"
+VERSION_CODENAME=vitos
+HOME_URL="https://crypto0010.github.io/VITOS/"
+SUPPORT_URL="https://crypto0010.github.io/VITOS/"
+BUG_REPORT_URL="https://github.com/crypto0010/VITOS/issues"
+ANSI_COLOR="1;36"
+LOGO=vitos
+VITOS_ORIGIN="Designed and developed at VIT Bhopal — Cybersecurity and Digital Forensics Lab"
+VITOS_TAGLINE="Designed at VIT Bhopal for VITians"
