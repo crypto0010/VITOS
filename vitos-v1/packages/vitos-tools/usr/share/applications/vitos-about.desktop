@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=About VITOS
+Comment=VITOS team, credits, and acknowledgements
+Exec=xdg-open /usr/share/vitos/about/vitos-about.html
+Icon=help-about
+Terminal=false
+Categories=X-VITOS-About;
+Keywords=about;credits;team;vitos;
