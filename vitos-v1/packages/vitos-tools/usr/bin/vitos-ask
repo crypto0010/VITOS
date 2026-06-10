@@ -1,0 +1,47 @@
+#!/bin/sh
+# vitos-ask — ask the local VITOS AI (Gemma 3 via Ollama) anything.
+# A quick "ask bar": prompt via rofi (fallback yad/zenity/stdin), answer shown
+# in a scrollable dialog. Fully offline — talks to the local ollama service
+# (model: vitos-intent). Bound to Super+A and listed under VITOS · AI.
+#
+# VITOS_ASK_TEST=1 prints the resolved model/command and exits 0 (CI hook).
+set -u
+MODEL="vitos-intent"
+
+prompt_tool() {
+  if command -v rofi >/dev/null 2>&1; then
+    rofi -dmenu -p "Ask VITOS AI" </dev/null
+  elif command -v yad >/dev/null 2>&1; then
+    yad --entry --title="VITOS AI" --text="Ask anything:"
+  elif command -v zenity >/dev/null 2>&1; then
+    zenity --entry --title="VITOS AI" --text="Ask anything:"
+  else
+    printf 'Ask VITOS AI: ' >&2; read -r line && printf '%s' "$line"
+  fi
+}
+show_answer() {
+  if command -v yad >/dev/null 2>&1; then
+    yad --text-info --title="VITOS AI" --width=720 --height=480 --wrap --button=Close:0
+  elif command -v zenity >/dev/null 2>&1; then
+    zenity --text-info --title="VITOS AI" --width=720 --height=480
+  else
+    cat
+  fi
+}
+
+if [ "${VITOS_ASK_TEST:-0}" = "1" ]; then
+  if   command -v rofi   >/dev/null 2>&1; then pt=rofi
+  elif command -v yad    >/dev/null 2>&1; then pt=yad
+  elif command -v zenity >/dev/null 2>&1; then pt=zenity
+  else pt=stdin; fi
+  echo "MODEL=$MODEL RUN=ollama run $MODEL PROMPT_TOOL=$pt"
+  exit 0
+fi
+
+command -v ollama >/dev/null 2>&1 || { echo "ollama not installed" >&2; exit 1; }
+
+Q=$(prompt_tool)
+[ -n "$Q" ] || exit 0
+ans=$(ollama run "$MODEL" "$Q" 2>/dev/null)
+[ -n "$ans" ] || ans="VITOS AI is unavailable — is the ollama service running?  (systemctl status ollama)"
+printf 'Q: %s\n\n%s\n' "$Q" "$ans" | show_answer

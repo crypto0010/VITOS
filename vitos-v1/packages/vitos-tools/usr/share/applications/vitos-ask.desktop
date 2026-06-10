@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ask VITOS AI
+Comment=Ask the local Gemma 3 model anything (offline) — also on Super+A
+Exec=vitos-ask
+Icon=system-search
+Terminal=false
+Categories=X-VITOS-AI;
+Keywords=ai;ask;search;gemma;ollama;vitos;

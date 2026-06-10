@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS AI Hotkey
+Comment=Bind Super+A to the VITOS AI ask bar
+Exec=/usr/local/bin/vitos-ask-keybind
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-XFCE-Autostart-Override=true

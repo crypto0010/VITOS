@@ -10,9 +10,9 @@ set -u
 
 PRESET="${1:-}"
 case "$PRESET" in
-  neon)    GTK="Arc-Dark";     ICONS="Papirus-Dark"; WM="Arc-Dark";     WP="wallpaper.png" ;;
-  matrix)  GTK="Materia-dark"; ICONS="Papirus-Dark"; WM="Materia-dark"; WP="wallpaper-matrix.png" ;;
-  stealth) GTK="Adwaita-dark"; ICONS="Papirus-Dark"; WM="Adwaita-dark"; WP="wallpaper-stealth.png" ;;
+  neon)    GTK="Arc-Dark";    ICONS="Papirus-Dark"; WM="Arc-Dark";    WP="wallpaper.png" ;;
+  matrix)  GTK="Arc-Dark";    ICONS="Papirus-Dark"; WM="Arc-Dark";    WP="wallpaper-matrix.png" ;;
+  stealth) GTK="Arc-Darker";  ICONS="Papirus-Dark"; WM="Arc-Darker";  WP="wallpaper-stealth.png" ;;
   ""|-h|--help) echo "usage: vitos-theme <neon|matrix|stealth>" >&2; exit 2 ;;
   *) echo "vitos-theme: unknown preset '$PRESET'" >&2; exit 2 ;;
 esac

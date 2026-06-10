@@ -29,11 +29,16 @@ tag.sprite.SetX(Window.GetWidth()/2 - tag.image.GetWidth()/2);
 tag.sprite.SetY(Window.GetHeight() * 0.86);
 
 tick = 0;
+scan_y = 0;
 fun refresh_callback() {
   tick++;
   logo.sprite.SetOpacity(0.7 + 0.3 * Math.Sin(tick / 12));
   tag.sprite.SetOpacity(0.5 + 0.5 * Math.Sin(tick / 18));
-  scan.sprite.SetY((tick * 6) % Window.GetHeight());
+  # Sweep the scanline down and wrap — no modulo operator (the Plymouth script
+  # language has none), just an accumulator + reset.
+  scan_y = scan_y + 6;
+  if (scan_y > Window.GetHeight()) scan_y = 0;
+  scan.sprite.SetY(scan_y);
 }
 Plymouth.SetRefreshFunction(refresh_callback);
 

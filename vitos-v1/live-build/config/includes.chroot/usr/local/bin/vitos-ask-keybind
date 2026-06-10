@@ -1,0 +1,12 @@
+#!/bin/sh
+# Register Super+A -> vitos-ask in the xfce4-keyboard-shortcuts channel without
+# clobbering the XFCE defaults (adds a single custom command binding). Run from
+# /etc/xdg/autostart on XFCE login. Idempotent.
+command -v xfconf-query >/dev/null 2>&1 || exit 0
+P='/commands/custom/<Super>a'
+cur=$(xfconf-query -c xfce4-keyboard-shortcuts -p "$P" 2>/dev/null || true)
+[ "$cur" = "vitos-ask" ] && exit 0
+xfconf-query -c xfce4-keyboard-shortcuts -p "$P" -s 'vitos-ask' 2>/dev/null \
+  || xfconf-query -c xfce4-keyboard-shortcuts -p "$P" -n -t string -s 'vitos-ask' 2>/dev/null \
+  || true
+exit 0

@@ -35,7 +35,9 @@ for f in "$INC/usr/lib/os-release" "$INC/etc/lsb-release" "$INC/etc/issue" \
          "$REPO_ROOT/vitos-v1/branding/build-branding.sh" \
          "$REPO_ROOT/vitos-v1/packages/vitos-base/usr/share/plymouth/themes/vitos/vitos.script" \
          "$TOOLS/usr/bin/vitos-theme" \
-         "$INC/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml"; do
+         "$INC/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" \
+         "$TOOLS/usr/bin/vitos-ask" \
+         "$INC/usr/local/bin/vitos-ask-keybind"; do
     [ -f "$f" ] || { echo "required file missing: $f"; exit 2; }
 done
 
@@ -165,6 +167,29 @@ grep -q 'Arc-Dark' "$SKEL/xsettings.xml" && pass "T11 default GTK theme set" || 
 grep -q 'use_compositing' "$SKEL/xfwm4.xml" && pass "T11 compositor enabled" || fail "T11 compositor not enabled"
 for p in arc-theme papirus-icon-theme xfce4-screensaver; do
     grep -qx "$p" "$PKGLIST" && pass "T11 package listed: $p" || fail "T11 package missing: $p"
+done
+
+# ---------------------------------------------------------------------------
+# Component C — AI ask bar ----------------------------------------------------
+ASK="$TOOLS/usr/bin/vitos-ask"
+ASK_DESK="$APPS/vitos-ask.desktop"
+KEYBIND="$INC/usr/local/bin/vitos-ask-keybind"
+ASK_AUTO="$INC/etc/xdg/autostart/vitos-ask-keybind.desktop"
+
+say "T12: vitos-ask resolves the local Gemma 3 model + launcher/hotkey wired"
+sh -n "$ASK" && pass "T12 vitos-ask syntax OK" || fail "T12 vitos-ask syntax error"
+OUT=$(VITOS_ASK_TEST=1 sh "$ASK")
+echo "$OUT" | grep -q 'RUN=ollama run vitos-intent' && pass "T12 vitos-ask -> ollama vitos-intent" || fail "T12 vitos-ask resolve wrong: $OUT"
+if desktop-file-validate "$ASK_DESK" >/tmp/dfv.out 2>&1; then pass "T12 vitos-ask.desktop valid"; else fail "T12 vitos-ask.desktop INVALID"; cat /tmp/dfv.out; fi
+grep -q 'Categories=.*X-VITOS-AI' "$ASK_DESK" && pass "T12 vitos-ask.desktop in VITOS · AI" || fail "T12 vitos-ask.desktop lacks X-VITOS-AI"
+grep -q 'Exec=vitos-ask' "$ASK_DESK" && pass "T12 vitos-ask.desktop runs vitos-ask" || fail "T12 vitos-ask.desktop Exec wrong"
+sh -n "$KEYBIND" && pass "T12 vitos-ask-keybind syntax OK" || fail "T12 vitos-ask-keybind syntax error"
+grep -q 'vitos-ask' "$KEYBIND" && grep -q '<Super>a' "$KEYBIND" && pass "T12 keybind maps Super+A -> vitos-ask" || fail "T12 keybind mapping wrong"
+if desktop-file-validate "$ASK_AUTO" >/tmp/dfv.out 2>&1; then pass "T12 keybind autostart valid"; else fail "T12 keybind autostart INVALID"; cat /tmp/dfv.out; fi
+grep -q 'Exec=/usr/local/bin/vitos-ask-keybind' "$ASK_AUTO" && pass "T12 autostart runs the registrar" || fail "T12 autostart Exec wrong"
+for p in rofi yad; do
+    grep -qx "$p" "$REPO_ROOT/vitos-v1/live-build/config/package-lists/vitos.list.chroot" \
+      && pass "T12 package listed: $p" || fail "T12 package missing: $p"
 done
 
 # ---------------------------------------------------------------------------
