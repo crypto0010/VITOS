@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=strace
+Comment=strace — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool strace
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

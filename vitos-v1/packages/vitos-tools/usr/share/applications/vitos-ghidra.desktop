@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ghidra
+Comment=Ghidra — VITOS security tool (sandboxed via vitos-run)
+Exec=/usr/local/bin/ghidra
+Icon=ghidra
+Terminal=false
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Wireshark
+Comment=Wireshark — VITOS security tool (sandboxed via vitos-run)
+Exec=/usr/local/bin/wireshark
+Icon=wireshark
+Terminal=false
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=John the Ripper
+Comment=John the Ripper — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool john
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

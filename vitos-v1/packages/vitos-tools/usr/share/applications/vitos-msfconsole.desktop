@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Metasploit Framework
+Comment=Metasploit Framework — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool msfconsole --repl
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;

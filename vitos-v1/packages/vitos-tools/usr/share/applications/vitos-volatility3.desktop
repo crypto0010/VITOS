@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Volatility 3
+Comment=Volatility 3 — VITOS security tool (sandboxed via vitos-run)
+Exec=vitos-launch-tool volatility3
+Icon=utilities-terminal
+Terminal=true
+Categories=X-VITOS-Security;
+Keywords=security;vitos;pentest;forensics;
