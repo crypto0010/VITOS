@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VITOS Dashboard
+Comment=Open the VITOS admin/monitoring dashboard in your browser
+Exec=xdg-open http://127.0.0.1:8443
+Icon=web-browser
+Terminal=false
+Categories=X-VITOS-AI;
+Keywords=dashboard;monitor;vitos;
